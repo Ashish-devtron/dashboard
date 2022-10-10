@@ -30,7 +30,7 @@ export function installChart(request) {
 }
 
 export function updateChart(request) {
-    return put(Routes.UPDATE_APP_API, request, { timeout: 4 * 60000 })
+    return put(Routes.UPDATE_APP_API, request, { timeout: 5 * 60000 })
 }
 
 export function deleteInstalledChart(installedAppId, force?: boolean) {

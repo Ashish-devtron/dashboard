@@ -127,7 +127,7 @@ export const updateAppReleaseWithoutLinking = (requestPayload: UpdateAppReleaseW
 };
 
 export const updateAppRelease = (requestPayload: UpdateAppReleaseRequest): Promise<any> => {
-    return put(Routes.UPDATE_APP_API, requestPayload, { timeout: 4 * 60000 });
+    return put(Routes.UPDATE_APP_API, requestPayload, { timeout: 5 * 60000 });
 };
 
 export const linkToChartStore = (request: LinkToChartStoreRequest): Promise<UpdateReleaseResponse> => {
