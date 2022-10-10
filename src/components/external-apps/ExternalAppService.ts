@@ -105,7 +105,7 @@ export interface UpdateAppReleaseRequest {
     appStoreVersion: number
     referenceValueId: number
     referenceValueKind: string
-} 
+}
 
 export const getReleaseInfo = (appId: string): Promise<ReleaseInfoResponse> => {
     let url = `${Routes.HELM_RELEASE_INFO_API}?appId=${appId}`
@@ -127,7 +127,7 @@ export const updateAppReleaseWithoutLinking = (requestPayload: UpdateAppReleaseW
 };
 
 export const updateAppRelease = (requestPayload: UpdateAppReleaseRequest): Promise<any> => {
-    return put(Routes.UPDATE_APP_API, requestPayload);
+    return put(Routes.UPDATE_APP_API, requestPayload, { timeout: 4 * 60000 });
 };
 
 export const linkToChartStore = (request: LinkToChartStoreRequest): Promise<UpdateReleaseResponse> => {
