@@ -14,6 +14,7 @@ export function TriggerUrlModal({ appId, envId, installedAppId, isEAMode, close 
     const [result, setResponse] = useState<ManifestUrlList[]>()
     const [loading, setLoading] = useState(true)
     const data = { Ingress: [], Service: [] }
+    const [errorMessage, setErrorMessage] = useState({ title: '', subtitle: '' })
 
     const createUrlDataList = () => {
         result?.map((item) => {
@@ -41,8 +42,10 @@ export function TriggerUrlModal({ appId, envId, installedAppId, isEAMode, close 
                 setResponse(response.result)
                 setLoading(false)
             }
+            setErrorMessage({ title: '', subtitle: '' })
         } catch (error) {
-            showError(error)
+            setLoading(false)
+            setErrorMessage({title: 'Failed to fetch URLs', subtitle: 'Could not fetch service and ingress URLs. Please try again after some time.' })
         }
     }
 
@@ -52,9 +55,13 @@ export function TriggerUrlModal({ appId, envId, installedAppId, isEAMode, close 
         getManifest()
     }, [appId, envId])
 
+    const stopPropogation = (e) => {
+        e.stopPropagation()
+    }
+
     return (
         <VisibleModal className="" close={close}>
-            <div className="modal-body--ci-material h-100 dc__overflow-hidden">
+            <div onClick={stopPropogation} className="modal-body--ci-material h-100 dc__overflow-hidden">
                 <div className="trigger-modal__header">
                     <h1 className="modal__title flex left fs-16">URLs</h1>
                     <button type="button" className="dc__transparent" onClick={close}>
@@ -62,11 +69,11 @@ export function TriggerUrlModal({ appId, envId, installedAppId, isEAMode, close 
                     </button>
                 </div>
 
-                <div className="h-100 dc__overflow-scroll">
+                <div className="dc__overflow-scroll" style={{height: "calc(100% - 67px)"}}>
                     {loading ? (
                         <Progressing pageLoader />
                     ) : Object.values(data).every((value) => !value.length) ? (
-                        <EmptyUrlState />
+                        <EmptyUrlState title={errorMessage.title} subtitle={errorMessage.subtitle}/>
                     ) : (
                         Object.entries(data).map(([kind, item]) =>
                             item.length ? (
@@ -81,23 +88,25 @@ export function TriggerUrlModal({ appId, envId, installedAppId, isEAMode, close 
                                     </div>
                                     {item.map((value) => (
                                         <div className="url-table_row table-content pt-6 pb-6 fw-4 cn-9 fs-13 dc__visible-hover dc__visible-hover--parent">
-                                            <Tippy
-                                                content={value.name}
-                                                className="default-tt"
-                                                arrow={false}
-                                                placement="top"
-                                            >
-                                                <div className="dc__ellipsis-left direction-left w-200">
-                                                    {value.name}
-                                                </div>
-                                            </Tippy>
-                                            {value?.urls && (
+                                            <div className="flex dc__align-start dc__content-start w-200">
+                                                <Tippy
+                                                    content={value.name}
+                                                    className="default-tt dc__word-break-all"
+                                                    arrow={false}
+                                                    placement="top"
+                                                >
+                                                    <span className="dc__ellipsis-left direction-left">
+                                                        {value.name}
+                                                    </span>
+                                                </Tippy>
+                                            </div>
+                                            {kind === KIND.INGRESS && value?.urls && (
                                                 <div className="items-width-1">
                                                     {value.urls.map((url) => (
                                                         <div className="flex left">
                                                             <Tippy
                                                                 content={url}
-                                                                className="default-tt"
+                                                                className="default-tt dc__word-break-all"
                                                                 arrow={false}
                                                                 placement="top"
                                                             >
@@ -115,10 +124,11 @@ export function TriggerUrlModal({ appId, envId, installedAppId, isEAMode, close 
                                                     ))}
                                                 </div>
                                             )}
-                                            <div className="flex left items-width-1">
+                                            <div className="flexbox dc__content-start items-width-1">
+                                                <span className='flex dc__align-start'>
                                                 <Tippy
                                                     content={value.pointsTo}
-                                                    className="default-tt"
+                                                    className="default-tt dc__word-break-all"
                                                     arrow={false}
                                                     placement="top"
                                                 >
@@ -126,11 +136,12 @@ export function TriggerUrlModal({ appId, envId, installedAppId, isEAMode, close 
                                                         {value.pointsTo}
                                                     </span>
                                                 </Tippy>
-                                                <span className="icon-dim-16">
+                                                <span className="icon-dim-16 pt-2">
                                                     <CopyToClipboardText
                                                         iconClass="pointer dc__visible-hover--child icon-dim-16"
                                                         text={value.pointsTo}
                                                     />
+                                                </span>
                                                 </span>
                                             </div>
                                         </div>
@@ -175,16 +186,16 @@ export function CopyToClipboardText({ text, iconClass }: { text: string; iconCla
     )
 }
 
-function EmptyUrlState() {
+function EmptyUrlState({title = "", subtitle = ""}) {
     return (
         <EmptyState>
             <EmptyState.Image>
                 <img src={AppNotDeployed} alt="" />
             </EmptyState.Image>
             <EmptyState.Title>
-                <h4>No URLs available</h4>
+                <h4>{title || "No URLs available"}</h4>
             </EmptyState.Title>
-            <EmptyState.Subtitle>No URLs found in ingress and service resources</EmptyState.Subtitle>
+            <EmptyState.Subtitle>{subtitle || "No URLs found in ingress and service resources"}</EmptyState.Subtitle>
         </EmptyState>
     )
 }
