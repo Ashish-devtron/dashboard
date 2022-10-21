@@ -47,6 +47,7 @@ import {
 } from './TriggerView.utils'
 import TriggerViewConfigDiff from './triggerViewConfigDiff/TriggerViewConfigDiff'
 import Tippy from '@tippyjs/react'
+import AnnouncementBanner from '../../../common/AnnouncementBanner'
 
 export class CDMaterial extends Component<CDMaterialProps, CDMaterialState> {
     constructor(props: CDMaterialProps) {
@@ -243,9 +244,11 @@ export class CDMaterial extends Component<CDMaterialProps, CDMaterialState> {
         this.props.selectImage(index, this.props.materialType)
 
         if (this.state.isRollbackTrigger && this.state.selectedMaterial?.wfrId !== selectedMaterial.wfrId) {
+            const isSpecificTriggerConfig =
+                this.state.selectedConfigToDeploy.value === DeploymentWithConfigType.SPECIFIC_TRIGGER_CONFIG
             this.setState({
                 selectedMaterial,
-                checkingDiff: true,
+                checkingDiff: isSpecificTriggerConfig,
             })
 
             try {
@@ -261,12 +264,19 @@ export class CDMaterial extends Component<CDMaterialProps, CDMaterialState> {
                             result,
                         },
                     })
-                    const _diffOptions = checkForDiff(this.state.recentDeploymentConfig, _specificDeploymentConfig)
-                    this.setState({
-                        specificDeploymentConfig: _specificDeploymentConfig,
-                        diffFound: _diffOptions && Object.values(_diffOptions).some((d) => d),
-                        diffOptions: _diffOptions,
-                    })
+
+                    if (isSpecificTriggerConfig) {
+                        const _diffOptions = checkForDiff(this.state.recentDeploymentConfig, _specificDeploymentConfig)
+                        this.setState({
+                            specificDeploymentConfig: _specificDeploymentConfig,
+                            diffFound: _diffOptions && Object.values(_diffOptions).some((d) => d),
+                            diffOptions: _diffOptions,
+                        })
+                    } else {
+                        this.setState({
+                            specificDeploymentConfig: _specificDeploymentConfig,
+                        })
+                    }
                 }
             } catch (error) {
                 showError(error)
@@ -509,6 +519,8 @@ export class CDMaterial extends Component<CDMaterialProps, CDMaterialState> {
 
     renderConfigDiffStatus() {
         const _canReviewConfig = this.canReviewConfig()
+        const isLastDeployedOption =
+            this.state.selectedConfigToDeploy.value === DeploymentWithConfigType.LATEST_TRIGGER_CONFIG
         const statusColorClasses = this.state.checkingDiff
             ? 'cn-0 bcb-5'
             : !_canReviewConfig
@@ -518,40 +530,42 @@ export class CDMaterial extends Component<CDMaterialProps, CDMaterialState> {
             : 'cn-0 bcg-5'
         return (
             <div
-                className={`trigger-modal__config-diff-status flex pt-7 pb-7 pl-16 pr-16 dc__right-radius-4 ${
+                className={`trigger-modal__config-diff-status flex pl-16 pr-16 dc__right-radius-4 ${
                     _canReviewConfig ? 'cursor' : 'config-not-found'
-                }`}
+                } ${isLastDeployedOption ? 'pt-10 pb-10' : 'pt-7 pb-7'}`}
                 onClick={this.reviewConfig}
             >
-                <div
-                    className={`flex pt-3 pb-3 pl-12 pr-12 dc__border-radius-24 fs-12 fw-6 lh-20 ${statusColorClasses}`}
-                >
-                    {this.state.checkingDiff ? (
-                        <>
-                            Checking diff&nbsp;
-                            <Progressing
-                                size={16}
-                                styles={{
-                                    width: 'auto',
-                                }}
-                            />
-                        </>
-                    ) : !_canReviewConfig ? (
-                        <>
-                            <WarningIcon className="no-config-found-icon icon-dim-16" />
-                            &nbsp; Config not available
-                        </>
-                    ) : this.state.diffFound ? (
-                        <>
-                            <WarningIcon className="config-diff-found-icon icon-dim-16" />
-                            &nbsp; <span className="config-diff-status">Config diff</span>
-                        </>
-                    ) : (
-                        <span className="config-diff-status">No config diff</span>
-                    )}
-                </div>
-                {!this.state.checkingDiff && _canReviewConfig && (
-                    <span className="dc__uppercase cb-5 pointer ml-12">REVIEW</span>
+                {!isLastDeployedOption && (
+                    <div
+                        className={`flex pt-3 pb-3 pl-12 pr-12 dc__border-radius-24 fs-12 fw-6 lh-20 ${statusColorClasses}`}
+                    >
+                        {this.state.checkingDiff ? (
+                            <>
+                                Checking diff&nbsp;
+                                <Progressing
+                                    size={16}
+                                    styles={{
+                                        width: 'auto',
+                                    }}
+                                />
+                            </>
+                        ) : !_canReviewConfig ? (
+                            <>
+                                <WarningIcon className="no-config-found-icon icon-dim-16" />
+                                &nbsp; Config Not Available
+                            </>
+                        ) : this.state.diffFound ? (
+                            <>
+                                <WarningIcon className="config-diff-found-icon icon-dim-16" />
+                                &nbsp; <span className="config-diff-status">Config Diff</span>
+                            </>
+                        ) : (
+                            <span className="config-diff-status">No Config Diff</span>
+                        )}
+                    </div>
+                )}
+                {((!this.state.checkingDiff && _canReviewConfig) || isLastDeployedOption) && (
+                    <span className={`dc__uppercase cb-5 pointer ${!isLastDeployedOption ? 'ml-12' : ''}`}>REVIEW</span>
                 )}
             </div>
         )
@@ -755,6 +769,15 @@ export class CDMaterial extends Component<CDMaterialProps, CDMaterialState> {
         return true
     }
 
+    getTriggerModalBodyHeight() {
+        if (this.state.showConfigDiffView) {
+            return 'calc(100vh - 141px)'
+        } else if (this.state.isRollbackTrigger && window?._env_?.ANNOUNCEMENT_BANNER_MSG) {
+            return 'calc(100vh - 153px)'
+        }
+        return 'calc(100vh - 116px)'
+    }
+
     renderCDModal() {
         return (
             <>
@@ -780,12 +803,13 @@ export class CDMaterial extends Component<CDMaterialProps, CDMaterialState> {
                         <img alt="close" src={close} />
                     </button>
                 </div>
+                {!this.state.showConfigDiffView && <AnnouncementBanner parentClassName="cd-trigger-announcement" />}
                 <div
                     className={`trigger-modal__body ${
                         this.state.showConfigDiffView && this.canReviewConfig() ? 'p-0' : ''
                     }`}
                     style={{
-                        height: this.state.showConfigDiffView ? 'calc(100vh - 141px)' : 'calc(100vh - 116px)',
+                        height: this.getTriggerModalBodyHeight(),
                     }}
                 >
                     {this.state.showConfigDiffView && this.canReviewConfig() ? (
