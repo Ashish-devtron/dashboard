@@ -375,6 +375,7 @@ export const DeploymentTemplateOptionsTab = ({
                                 canSelect={!chartConfigLoading && !isBasicViewLocked && codeEditorValue}
                                 isDisabled={isBasicViewLocked}
                                 showTippy={isBasicViewLocked}
+                                tippyClass="default-white no-content-padding tippy-shadow"
                                 tippyContent={
                                     <>
                                         <div className="flexbox fw-6 p-12 dc__border-bottom-n1">
@@ -388,9 +389,7 @@ export const DeploymentTemplateOptionsTab = ({
                                     </>
                                 }
                             >
-                                {!chartConfigLoading &&
-                                    codeEditorValue &&
-                                    isBasicViewLocked && <Locked className="icon-dim-12 mr-6" />}
+                                {isBasicViewLocked && <Locked className="icon-dim-12 mr-6" />}
                                 Basic
                             </RadioGroup.Radio>
                             <RadioGroup.Radio
@@ -736,18 +735,23 @@ export const DeploymentTemplateEditorView = ({
         if (e.target.name === BASIC_FIELDS.PORT) {
             e.target.value = e.target.value.replace(/\D/g, '')
             _basicFieldValues[BASIC_FIELDS.PORT] = e.target.value && Number(e.target.value)
+        } else if (e.target.name === BASIC_FIELDS.CLASS_NAME) {
+            _basicFieldValues[BASIC_FIELDS.CLASS_NAME] = e.target.value
         } else if (e.target.name === BASIC_FIELDS.HOST) {
             _basicFieldValues[BASIC_FIELDS.HOSTS][0][BASIC_FIELDS.HOST] = e.target.value
         } else if (e.target.name === BASIC_FIELDS.PATH) {
             _basicFieldValues[BASIC_FIELDS.HOSTS][0][BASIC_FIELDS.PATHS][e.target.dataset.index] = e.target.value
         } else if (e.target.name === BASIC_FIELDS.RESOURCES_CPU || e.target.name === BASIC_FIELDS.RESOURCES_MEMORY) {
             const resource = _basicFieldValues[BASIC_FIELDS.RESOURCES]
-            resource[BASIC_FIELDS.LIMITS][e.target.name === BASIC_FIELDS.RESOURCES_CPU ? BASIC_FIELDS.CPU : BASIC_FIELDS.MEMORY] = e.target.value
+            resource[BASIC_FIELDS.LIMITS][
+                e.target.name === BASIC_FIELDS.RESOURCES_CPU ? BASIC_FIELDS.CPU : BASIC_FIELDS.MEMORY
+            ] = e.target.value
             resource[BASIC_FIELDS.REQUESTS] = { ...resource[BASIC_FIELDS.LIMITS] }
             _basicFieldValues[BASIC_FIELDS.RESOURCES] = resource
-        } else if (e.target.name.indexOf(BASIC_FIELDS.ENV_VARIABLES+'_') >= 0) {
+        } else if (e.target.name.indexOf(BASIC_FIELDS.ENV_VARIABLES + '_') >= 0) {
             const envVariable = _basicFieldValues[BASIC_FIELDS.ENV_VARIABLES][e.target.dataset.index]
-            envVariable[e.target.name.indexOf(BASIC_FIELDS.KEY) >= 0 ? BASIC_FIELDS.KEY : BASIC_FIELDS.VALUE] = e.target.value
+            envVariable[e.target.name.indexOf(BASIC_FIELDS.KEY) >= 0 ? BASIC_FIELDS.KEY : BASIC_FIELDS.VALUE] =
+                e.target.value
             _basicFieldValues[BASIC_FIELDS.ENV_VARIABLES][e.target.dataset.index] = envVariable
         }
         setBasicFieldValues(_basicFieldValues)
@@ -774,7 +778,9 @@ export const DeploymentTemplateEditorView = ({
         if (readOnly) return
         const _basicFieldValues = { ...basicFieldValues }
         const _currentValue =
-            name === BASIC_FIELDS.ENV_VARIABLES ? _basicFieldValues[BASIC_FIELDS.ENV_VARIABLES] : _basicFieldValues[BASIC_FIELDS.HOSTS][0][BASIC_FIELDS.PATHS]
+            name === BASIC_FIELDS.ENV_VARIABLES
+                ? _basicFieldValues[BASIC_FIELDS.ENV_VARIABLES]
+                : _basicFieldValues[BASIC_FIELDS.HOSTS][0][BASIC_FIELDS.PATHS]
         if (_currentValue.length === 1) {
             _currentValue.length = 0
         } else {
@@ -791,7 +797,7 @@ export const DeploymentTemplateEditorView = ({
         }
     }
 
-    const handleScanToggle = (): void => {
+    const handleIngressEnabledToggle = (): void => {
         const _basicFieldValues = { ...basicFieldValues }
         _basicFieldValues[BASIC_FIELDS.ENABLED] = !_basicFieldValues[BASIC_FIELDS.ENABLED]
         setBasicFieldValues(_basicFieldValues)
@@ -862,7 +868,7 @@ export const DeploymentTemplateEditorView = ({
                 </div>
             )}
             <div
-                className={`form__row form__row--gui-container pt-20 pr-20 pl-20 scrollable ${
+                className={`form__row form__row--gui-container pt-20 pr-20 pl-20 scrollable mb-0-imp ${
                     !isUnSet ? ' gui dc__border-top' : ' gui-with-warning'
                 }`}
             >
@@ -874,7 +880,7 @@ export const DeploymentTemplateEditorView = ({
                     <div className="w-650-px">
                         <div className="fw-6 fs-14 cn-9 mb-12">Container Port</div>
                         <div className="row-container mb-16">
-                            {renderLabel(BASIC_FIELDS.PORT, 'Port for the container', true)}
+                            {renderLabel('Port', 'Port for the container', true)}
                             <div>
                                 <input
                                     type="text"
@@ -892,12 +898,14 @@ export const DeploymentTemplateEditorView = ({
                                 )}
                             </div>
                         </div>
-                        <div className={`row-container ${basicFieldValues?.[BASIC_FIELDS.ENABLED] ? ' mb-8' : ' mb-16'}`}>
+                        <div
+                            className={`row-container ${basicFieldValues?.[BASIC_FIELDS.ENABLED] ? ' mb-8' : ' mb-16'}`}
+                        >
                             <label className="fw-6 fs-14 cn-9 mb-8">HTTP Requests Routes</label>
                             <div className="mt-4" style={{ width: '32px', height: '20px' }}>
                                 <Toggle
                                     selected={basicFieldValues?.[BASIC_FIELDS.ENABLED]}
-                                    onSelect={handleScanToggle}
+                                    onSelect={handleIngressEnabledToggle}
                                     disabled={readOnly}
                                 />
                             </div>
@@ -905,7 +913,21 @@ export const DeploymentTemplateEditorView = ({
                         {basicFieldValues?.[BASIC_FIELDS.ENABLED] && (
                             <div className="mb-12">
                                 <div className="row-container mb-12">
-                                    {renderLabel(BASIC_FIELDS.HOST, 'Host name')}
+                                    {renderLabel(
+                                        'Class name',
+                                        'This is used to indicate which ingress controller should be used for routing the traffic.If the ingressClassName is omitted, cluster default Ingress class will be used.',
+                                    )}
+                                    <input
+                                        type="text"
+                                        name={BASIC_FIELDS.CLASS_NAME}
+                                        value={basicFieldValues?.[BASIC_FIELDS.CLASS_NAME]}
+                                        className="w-100 br-4 en-2 bw-1 pl-10 pr-10 pt-5 pb-5"
+                                        onChange={handleInputChange}
+                                        readOnly={readOnly}
+                                    />
+                                </div>
+                                <div className="row-container mb-12">
+                                    {renderLabel('Host', 'Host name')}
                                     <input
                                         type="text"
                                         name={BASIC_FIELDS.HOST}
@@ -926,24 +948,26 @@ export const DeploymentTemplateEditorView = ({
                                         Add path
                                     </div>
                                 </div>
-                                {basicFieldValues?.[BASIC_FIELDS.HOSTS]?.[0]?.[BASIC_FIELDS.PATHS]?.map((path: string, index: number) => (
-                                    <div className="row-container mb-4" key={`${BASIC_FIELDS.PATH}-${index}`}>
-                                        <div />
-                                        <input
-                                            type="text"
-                                            name={BASIC_FIELDS.PATH}
-                                            data-index={index}
-                                            value={path}
-                                            className="w-100 br-4 en-2 bw-1 pl-10 pr-10 pt-5 pb-5"
-                                            onChange={handleInputChange}
-                                            readOnly={readOnly}
-                                        />
-                                        <Close
-                                            className="option-close-icon icon-dim-16 mt-8 mr-8 pointer"
-                                            onClick={(e) => removeRow(BASIC_FIELDS.PATH, index)}
-                                        />
-                                    </div>
-                                ))}
+                                {basicFieldValues?.[BASIC_FIELDS.HOSTS]?.[0]?.[BASIC_FIELDS.PATHS]?.map(
+                                    (path: string, index: number) => (
+                                        <div className="row-container mb-4" key={`${BASIC_FIELDS.PATH}-${index}`}>
+                                            <div />
+                                            <input
+                                                type="text"
+                                                name={BASIC_FIELDS.PATH}
+                                                data-index={index}
+                                                value={path}
+                                                className="w-100 br-4 en-2 bw-1 pl-10 pr-10 pt-5 pb-5"
+                                                onChange={handleInputChange}
+                                                readOnly={readOnly}
+                                            />
+                                            <Close
+                                                className="option-close-icon icon-dim-16 mt-8 mr-8 pointer"
+                                                onClick={(e) => removeRow(BASIC_FIELDS.PATH, index)}
+                                            />
+                                        </div>
+                                    ),
+                                )}
                             </div>
                         )}
                         <div className="fw-6 fs-14 cn-9 mb-8">Resources (CPU & RAM)</div>
@@ -953,7 +977,11 @@ export const DeploymentTemplateEditorView = ({
                                 <input
                                     type="text"
                                     name={BASIC_FIELDS.RESOURCES_CPU}
-                                    value={basicFieldValues?.[BASIC_FIELDS.RESOURCES][BASIC_FIELDS.LIMITS][BASIC_FIELDS.CPU]}
+                                    value={
+                                        basicFieldValues?.[BASIC_FIELDS.RESOURCES][BASIC_FIELDS.LIMITS][
+                                            BASIC_FIELDS.CPU
+                                        ]
+                                    }
                                     className="w-200 br-4 en-2 bw-1 pl-10 pr-10 pt-5 pb-5"
                                     onChange={handleInputChange}
                                     readOnly={readOnly}
@@ -972,7 +1000,11 @@ export const DeploymentTemplateEditorView = ({
                                 <input
                                     type="text"
                                     name={BASIC_FIELDS.RESOURCES_MEMORY}
-                                    value={basicFieldValues?.[BASIC_FIELDS.RESOURCES][BASIC_FIELDS.LIMITS][BASIC_FIELDS.MEMORY]}
+                                    value={
+                                        basicFieldValues?.[BASIC_FIELDS.RESOURCES][BASIC_FIELDS.LIMITS][
+                                            BASIC_FIELDS.MEMORY
+                                        ]
+                                    }
                                     className="w-200 br-4 en-2 bw-1 pl-10 pr-10 pt-5 pb-5"
                                     onChange={handleInputChange}
                                     readOnly={readOnly}

@@ -180,10 +180,11 @@ export default function DeploymentTemplateOverride({
                 state.selectedChartRefId || state.latestAppChartRef || state.latestChartRef,
             )
             if (state.selectedChart.name === ROLLOUT_DEPLOYMENT) {
-                updateTemplateFromBasicValue(result.environmentConfig.envOverrideValues)
+                updateTemplateFromBasicValue(result.environmentConfig.envOverrideValues || result.globalConfig)
                 parseDataForView(
                     result.environmentConfig.isBasicViewLocked,
                     result.environmentConfig.currentViewEditor,
+                    result.globalConfig,
                     result.environmentConfig.envOverrideValues,
                 )
             }
@@ -205,18 +206,21 @@ export default function DeploymentTemplateOverride({
                 dispatch({ type: 'toggleDialog' })
             } else {
                 //remove copy
-                dispatch({ type: 'removeDuplicate' })
+                if (state.selectedChart.name === ROLLOUT_DEPLOYMENT) {
+                    const _basicFieldValues = getBasicFieldValue(state.data.globalConfig)
+                    dispatch({
+                        type: 'multipleOptions',
+                        value: {
+                            basicFieldValues: _basicFieldValues,
+                            basicFieldValuesErrorObj: validateBasicView(_basicFieldValues),
+                            isBasicViewLocked: isBasicValueChanged(state.data.globalConfig),
+                            duplicate: null,
+                        },
+                    })
+                }
             }
         } else {
             //create copy
-            if (state.selectedChart.name === ROLLOUT_DEPLOYMENT) {
-                updateTemplateFromBasicValue(state.duplicate || state.data.globalConfig)
-                parseDataForView(
-                    state.data.environmentConfig.isBasicViewLocked,
-                    state.data.environmentConfig.currentViewEditor,
-                    state.duplicate || state.data.globalConfig,
-                )
-            }
             dispatch({ type: 'createDuplicate', value: state.data.globalConfig })
         }
     }
@@ -236,27 +240,31 @@ export default function DeploymentTemplateOverride({
     const parseDataForView = async (
         _isBasicViewLocked: boolean,
         _currentViewEditor: string,
-        template,
+        baseTemplate,
+        envOverrideValues
     ): Promise<void> => {
         if (_currentViewEditor === '' || _currentViewEditor === EDITOR_VIEW.UNDEFINED) {
-            const {
-                result: {
-                    globalConfig: { defaultAppOverride },
-                },
-            } = await getBaseDeploymentTemplate(
-                +appId,
-                state.selectedChartRefId || state.latestAppChartRef || state.latestChartRef,
-            )
-            _isBasicViewLocked = isBasicValueChanged(defaultAppOverride, template)
+            if (!envOverrideValues) {
+                const {
+                    result: { defaultAppOverride },
+                } = await getBaseDeploymentTemplate(
+                    +appId,
+                    state.selectedChartRefId || state.latestAppChartRef || state.latestChartRef,
+                    true,
+                )
+                _isBasicViewLocked = isBasicValueChanged(defaultAppOverride, baseTemplate)
+            } else {
+                _isBasicViewLocked = isBasicValueChanged(baseTemplate, envOverrideValues)
+            }
         }
 
         const statesToUpdate = {}
-        if (!state.currentViewEditor) {
+        if (!state.currentViewEditor || _isBasicViewLocked !== state.isBasicViewLocked) {
             _currentViewEditor =
                 _isBasicViewLocked ||
                 state.openComparison ||
                 state.showReadme ||
-                currentServerInfo.serverInfo.installationType === InstallationType.ENTERPRISE
+                currentServerInfo?.serverInfo?.installationType === InstallationType.ENTERPRISE
                     ? EDITOR_VIEW.ADVANCED
                     : EDITOR_VIEW.BASIC
             statesToUpdate['yamlMode'] = _currentViewEditor === EDITOR_VIEW.BASIC ? false : true
@@ -265,7 +273,7 @@ export default function DeploymentTemplateOverride({
         }
 
         if (!_isBasicViewLocked) {
-            const _basicFieldValues = getBasicFieldValue(template)
+            const _basicFieldValues = getBasicFieldValue(envOverrideValues || baseTemplate)
             statesToUpdate['basicFieldValues'] = _basicFieldValues
             statesToUpdate['basicFieldValuesErrorObj'] = validateBasicView(_basicFieldValues)
         }
@@ -332,15 +340,19 @@ function DeploymentTemplateOverrideForm({
 
     async function handleSubmit(e) {
         e.preventDefault()
-        if (!obj) {
+        if (!obj && state.yamlMode) {
             toast.error(error)
+            return
+        }
+        if (state.selectedChart.name === ROLLOUT_DEPLOYMENT && !state.basicFieldValuesErrorObj.isValid) {
+            toast.error('Some required fields are missing')
             return
         }
         const api =
             state.data.environmentConfig && state.data.environmentConfig.id > 0
                 ? updateDeploymentTemplate
                 : createDeploymentTemplate
-        const envOverrideValuesWithBasic = !state.yamlMode && patchBasicData(obj, state.basicFieldValues)
+        const envOverrideValuesWithBasic = !state.yamlMode && patchBasicData(obj || state.duplicate, state.basicFieldValues)
         const payload = {
             environmentId: +envId,
             envOverrideValues: envOverrideValuesWithBasic || obj,
@@ -408,7 +420,8 @@ function DeploymentTemplateOverrideForm({
             return
         }
         try {
-            const parsedCodeEditorValue = YAML.parse(tempValue)
+            const parsedCodeEditorValue =
+                tempValue && tempValue !== '' ? YAML.parse(tempValue) : state.duplicate || state.data.globalConfig
             if (state.yamlMode) {
                 const _basicFieldValues = getBasicFieldValue(parsedCodeEditorValue)
                 dispatch({
