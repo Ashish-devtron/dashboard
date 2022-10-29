@@ -95,17 +95,20 @@ function NodeComponent({
                     if(appDetails.appType == AppType.EXTERNAL_HELM_CHART){
                         tableHeader = ['Name', ''];
                     }else{
-                        tableHeader = ['Name', 'Ready', ''];
+                        tableHeader = ['Name', 'Ready', 'Restarts', 'Age', '', ''];
+                        if (externalLinks.length > 0){
+                            tableHeader = ['Name', 'Ready', 'Restarts', 'Age', 'Links', '']; 
+                        }
                     }
-                    _fcw = 'col-10';
+                    _fcw = 'col-7';
                     break;
                 case NodeType.Service.toLowerCase():
                     tableHeader = ['Name', 'URL', ''];
                     _fcw = 'col-6';
                     break;
                 default:
-                    tableHeader = ['Name', ''];
-                    _fcw = 'col-11';
+                    tableHeader = ['Name','',''];
+                    _fcw = 'col-10';
                     break;
             }
 
@@ -137,6 +140,32 @@ function NodeComponent({
             setSelectedHealthyNodeCount(_healthyNodeCount);
         }
     }, [params.nodeType, podType, url, filteredNodes]);
+
+    const getPodRestartCount = (node : iNode) =>{
+        node.info?.forEach(element => {
+            if(element.name === 'Restart Count' )return element.value //return restart count value if present
+        });
+        return 0 
+    };
+
+    const getElapsedTime = (createdAt : Date) => {
+        const currentDate = new Date()
+        const elapsedTime = Math.floor((currentDate.getTime() - createdAt.getTime())/1000)
+        if (elapsedTime >= 0) {
+            const days = Math.floor(elapsedTime / (24 * 60 * 60)),
+            hrs = Math.floor((elapsedTime / (60 * 60)) % 24), // hrs mod (%) 24 hrs to get elapsed hrs
+            mins = Math.floor((elapsedTime / 60) % 60), // mins mod (%) 60 mins to get elapsed mins
+            secs = Math.floor(elapsedTime % 60) // secs mod (%) 60 secs to get elapsed secs
+            let age = ""
+            if(days >= 1) age+=(days+"d")
+            if(hrs >= 1) age+=(hrs+"h")
+            if(age.length > 0)return age  //if age is more than hours just show age in days and hours
+            if(mins >= 1) age+=(mins+"m")
+            if(secs >= 1) age+=(secs+"s")
+            return age  //return age in minutes and seconds
+        }
+        return ""
+    };
 
     const markNodeSelected = (nodes: Array<iNode>, nodeName: string) => {
         const updatedNodes = nodes.map((node) => {
@@ -196,8 +225,10 @@ function NodeComponent({
             return (
                 <React.Fragment key={'grt' + index}>
                     {showHeader && !!_currentNodeHeader && (
-                        <div className="fw-6 pt-10 pb-10 pl-16 dc__border-bottom-n1">
-                            <span>{node.kind}</span>
+                        <div className="flex left fw-6 pt-10 pb-10 pl-16 dc__border-bottom-n1">
+                            <div className={'flex left col-10 pt-9 pb-9'}>{node.kind}</div>
+                            { node.kind === NodeType.Pod && podLevelExternalLinks.length > 0 && <div className={'flex left col-1 pt-9 pb-9 pl-9 pr-9'}>Links</div> }
+                            { node.kind === NodeType.Containers && containerLevelExternalLinks.length > 0 && <div className={'flex left col-1 pt-9 pb-9 pl-9 pr-9'}>Links</div> }  
                         </div>
                     )}
                     <div className="node-row m-0 resource-row">
@@ -268,22 +299,6 @@ function NodeComponent({
                                     })}
                                 </div>
                             </div>
-                            {node.kind === NodeType.Pod && podLevelExternalLinks.length > 0 && (
-                                <NodeLevelExternalLinks
-                                    helmAppDetails={appDetails}
-                                    nodeLevelExternalLinks={podLevelExternalLinks}
-                                    podName={node.name}
-                                />
-                            )}
-                            {node.kind === NodeType.Containers && containerLevelExternalLinks.length > 0 && (
-                                <NodeLevelExternalLinks
-                                    helmAppDetails={appDetails}
-                                    nodeLevelExternalLinks={containerLevelExternalLinks}
-                                    podName={node['pNode']?.name}
-                                    containerName={node.name}
-                                    addExtraSpace={true}
-                                />
-                            )}
                         </div>
 
                         {params.nodeType === NodeType.Service.toLowerCase() && (
@@ -309,10 +324,43 @@ function NodeComponent({
 
                         {params.nodeType === NodeType.Pod.toLowerCase() && (
                             <div className={'flex left col-1 pt-9 pb-9'}>
-                                {' '}
-                                {node.info?.filter((_info) => _info.name === 'Containers')[0]?.value}{' '}
+                                {node.info?.filter((_info) => _info.name === 'Containers')[0]?.value}
                             </div>
                         )}
+                    
+                        {params.nodeType === NodeType.Pod.toLowerCase() && (
+                            <div className={'flex left col-1 pt-9 pb-9'}>
+                                {(node.kind !== 'Containers') && getPodRestartCount(node)}
+                            </div>
+                        )}
+
+                        {params.nodeType === NodeType.Pod.toLowerCase() && (
+                            <div className={'flex left col-1 pt-9 pb-9'}>
+                                {getElapsedTime(new Date(node.createdAt))}
+                            </div>
+                        )}
+
+                    
+                        <div className={'flex left col-1 pt-9 pb-9'}>
+                            {node.kind === NodeType.Pod && podLevelExternalLinks.length > 0 && (    
+                                <NodeLevelExternalLinks
+                                    helmAppDetails={appDetails}
+                                    nodeLevelExternalLinks={podLevelExternalLinks}
+                                    podName={node.name}
+                                />   
+                            )}
+                        
+                            {node.kind === NodeType.Containers && containerLevelExternalLinks.length > 0 && (    
+                                <NodeLevelExternalLinks
+                                    helmAppDetails={appDetails}
+                                    nodeLevelExternalLinks={containerLevelExternalLinks}
+                                    podName={node['pNode']?.name}
+                                    containerName={node.name}
+                                    addExtraSpace={true}
+                                />    
+                            )}
+                        </div>
+                      
 
                         <div className={'flex col-1 pt-9 pb-9 flex-row-reverse'}>
                             <NodeDeleteComponent nodeDetails={node} appDetails={appDetails} />
