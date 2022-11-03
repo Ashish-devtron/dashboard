@@ -8,10 +8,14 @@ import { DeploymentStatusDetailBreakdownType, DeploymentStatusDetailsBreakdownDa
 import moment from 'moment'
 import { Moment12HourFormat } from '../../../../config'
 import InfoColourBar from '../../../common/infocolourBar/InfoColourbar'
+import ErrorBar from '../../../common/error/ErrorBar'
+import IndexStore from '../../../v2/appDetails/index.store'
 
 export default function DeploymentStatusDetailBreakdown({
     deploymentStatusDetailsBreakdownData,
+    appStreamData
 }: DeploymentStatusDetailBreakdownType) {
+  const _appDetails = IndexStore.getAppDetails()
     const renderIcon = (iconState: string): JSX.Element => {
         switch (iconState) {
             case 'success':
@@ -51,19 +55,28 @@ export default function DeploymentStatusDetailBreakdown({
         )
     }
     return (
-        <div className="deployment-status-breakdown-container pl-20 pr-20">
-            {deploymentStatusDetailsBreakdownData.deploymentError && (
-                <InfoColourBar
-                    message={deploymentStatusDetailsBreakdownData.deploymentError}
-                    classname="error_bar cn-9 mb-20 lh-20"
-                    Icon={Error}
-                    iconClass="icon-dim-20"
-                />
-            )}
-            {renderStatusDetailRow('DEPLOYMENT_INITIATED')}
-            {renderStatusDetailRow('GIT_COMMIT')}
-            {renderStatusDetailRow('KUBECTL_APPLY')}
-            {renderStatusDetailRow('APP_HEALTH', true)}
-        </div>
+        <>
+         {appStreamData?.result?.application?.status?.conditions?.length &&
+                        appStreamData?.result?.application?.status?.conditions.map((condition) => {
+                          return  condition.type.toLowerCase() === 'errimagepull' || 'imagepullbackoff' ? (
+                                <ErrorBar appDetails={_appDetails} />
+                            ) : null
+                      })}
+
+            <div className="deployment-status-breakdown-container pl-20 pr-20">
+                {deploymentStatusDetailsBreakdownData.deploymentError && (
+                    <InfoColourBar
+                        message={deploymentStatusDetailsBreakdownData.deploymentError}
+                        classname="error_bar cn-9 mb-20 lh-20"
+                        Icon={Error}
+                        iconClass="icon-dim-20"
+                    />
+                )}
+                {renderStatusDetailRow('DEPLOYMENT_INITIATED')}
+                {renderStatusDetailRow('GIT_COMMIT')}
+                {renderStatusDetailRow('KUBECTL_APPLY')}
+                {renderStatusDetailRow('APP_HEALTH', true)}
+            </div>
+        </>
     )
 }

@@ -8,6 +8,7 @@ import './environmentStatus.scss'
 import { APP_STATUS_CUSTOM_MESSAGES, APP_STATUS_HEADERS } from '../../../../../config'
 import { StatusFilterButtonComponent } from '../../k8Resource/StatusFilterButton.component'
 import { AppStatusDetailType, NodeStatus } from '../../appDetails.type'
+import ErrorBar from '../../../../common/error/ErrorBar'
 
 interface NodeStreamMap {
     group: string
@@ -157,6 +158,13 @@ function AppStatusDetailModal({ close, appStreamData, showAppStatusMessage }: Ap
                 </div>
 
                 <div className="app-status-detail__body">
+                    {appStreamData?.result?.application?.status?.conditions?.length &&
+                        appStreamData?.result?.application?.status?.conditions.map((condition) => {
+                           return condition.type.toLowerCase() === 'errimagepull' || 'imagepullbackoff' ? (
+                                <ErrorBar appDetails={_appDetails} />
+                            ) : null
+                      })}
+
                     {message && (
                         <div
                             className={` ${
@@ -167,6 +175,7 @@ function AppStatusDetailModal({ close, appStreamData, showAppStatusMessage }: Ap
                             {_hasMoreData && renderShowMoreButton()}
                         </div>
                     )}
+
                     {showAppStatusMessage && (
                         <div className="bcn-1 cn-9 pt-10 pb-10 pl-20 pr-20">
                             <span className="fw-6 ">Message: </span>
