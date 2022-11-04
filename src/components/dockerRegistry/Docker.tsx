@@ -28,9 +28,9 @@ import { DC_CONTAINER_REGISTRY_CONFIRMATION_MESSAGE, DeleteComponentsName } from
 import ReactSelect, { components } from 'react-select'
 import { RadioGroup, RadioGroupItem } from '../common/formFields/RadioGroup'
 import { AuthenticationType } from '../cluster/cluster.type'
-import ManageResgistry, { CredentialType } from './ManageResgistry'
+import ManageRegistry from './ManageRegistry'
 import { useHistory, useParams, useRouteMatch } from 'react-router-dom'
-import { CustomCredential } from './dockerType'
+import { CredentialType, CustomCredential } from './dockerType'
 import Reload from '../Reload/Reload'
 
 enum CERTTYPE {
@@ -312,6 +312,7 @@ function DockerForm({
     const [customCredential, setCustomCredential] = useState<CustomCredential>(
         isCustomScript ? JSON.parse(ipsConfig?.credentialValue) : undefined,
     )
+    const [errorValidation, setErrorValidation] = useState<boolean>(false)
 
     function customHandleChange(e) {
         setCustomState((st) => ({ ...st, [e.target.name]: { value: e.target.value, error: '' } }))
@@ -412,6 +413,7 @@ function DockerForm({
     }
 
     async function onSave() {
+        if(errorValidation) return null
         let awsRegion
         if (selectedDockerRegistryType.value === 'ecr') {
             awsRegion = fetchAWSRegion()
@@ -855,7 +857,7 @@ function DockerForm({
                     {renderRegistryCredentialText()}
                 </div>
             ) : (
-                <ManageResgistry
+                <ManageRegistry
                     clusterOption={clusterOption}
                     blackList={blackList}
                     setBlackList={setBlackList}
@@ -872,6 +874,8 @@ function DockerForm({
                     ignoredClusterList={ignoredClusterList}
                     setCustomCredential={setCustomCredential}
                     customCredential={customCredential}
+                    setErrorValidation={setErrorValidation}
+                    errorValidation={errorValidation}
                 />
             )}
 

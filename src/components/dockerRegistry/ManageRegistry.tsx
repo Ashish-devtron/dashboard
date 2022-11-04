@@ -5,7 +5,7 @@ import { ReactComponent as Check } from '../../assets/icons/misc/checkGreen.svg'
 import { ReactComponent as Document } from '../../assets/icons/ic-document.svg'
 import { ReactComponent as Add } from '../../assets/icons/ic-add.svg'
 import { ReactComponent as Edit } from '../../assets/icons/ic-pencil.svg'
-import './docker.scss'
+import error from '../../assets/icons/misc/errorInfo.svg'
 import Select from 'react-select'
 import {
     ClearIndicator,
@@ -14,19 +14,13 @@ import {
     MultiValueRemove,
     Option,
     RadioGroup,
-    useJsonYaml,
 } from '../common'
 import InfoColourBar from '../common/infocolourBar/InfoColourbar'
 import { ReactComponent as Warn } from '../../assets/icons/ic-warning.svg'
 import { ReactComponent as DropDownIcon } from '../../assets/icons/appstatus/ic-chevron-down.svg'
+import { CredentialType, ManageRegistryType } from './dockerType'
 
-export const CredentialType = {
-    SAME_AS_REGISTRY: 'SAME_AS_REGISTRY',
-    NAME: 'NAME',
-    CUSTOM_CREDENTIAL: 'CUSTOM_CREDENTIAL',
-}
-
-function ManageResgistry({
+function ManageRegistry({
     clusterOption,
     blackList,
     setBlackList,
@@ -43,8 +37,10 @@ function ManageResgistry({
     ignoredClusterList,
     customCredential,
     setCustomCredential,
-}) {
-    const [showAlertBar, setAlertBar] = useState(false)
+    setErrorValidation,
+    errorValidation
+}: ManageRegistryType) {
+    const [showAlertBar, setAlertBar] = useState<boolean>(false)
 
     const toggleBlackListEnabled = () => {
         setBlackListEnabled(!blackListEnabled)
@@ -104,7 +100,7 @@ function ManageResgistry({
         )
     }
 
-    const renderNoSelectionview = () => {
+    const renderNoSelectionView = (): JSX.Element => {
         return (
             <div className="flex dc__content-space en-2 bw-1 bcn-1 br-4 pl-10 pr-10 pt-8 pb-8">
                 <div className="bcn-1 cursor-not-allowed">{getPlaceholder()}</div>
@@ -123,7 +119,7 @@ function ManageResgistry({
     }
     const renderIgnoredCluster = (): JSX.Element => {
         if (whiteList.length > 0) {
-            return renderNoSelectionview()
+            return renderNoSelectionView()
         } else if (whiteList.length === 0 && !blackListEnabled) {
             return renderNotDefinedView('blacklist')
         } else {
@@ -163,7 +159,7 @@ function ManageResgistry({
 
     const renderAppliedCluster = (): JSX.Element => {
         if (blackList.length > 0) {
-            return renderNoSelectionview()
+            return renderNoSelectionView()
         } else if (blackList.length === 0 && blackListEnabled) {
             return renderNotDefinedView('whitelist')
         } else if (blackList.length === 0) {
@@ -208,6 +204,12 @@ function ManageResgistry({
     const onClickSpecifyImagePullSecret = (e) => {
         if (credentialsType === CredentialType.NAME) {
             setCredentialValue(e.target.value)
+            if (!e.target.value){
+               setErrorValidation(true)
+               return null
+              }else{
+                setErrorValidation(false)
+              }
         } else {
             setCustomCredential({
                 ...customCredential,
@@ -242,7 +244,7 @@ function ManageResgistry({
 
                 <div className="flex left mb-16 cn-7">
                     <Bulb className="icon-dim-16 mr-8" />
-                    Define credentials{' '}
+                    Define credentials
                 </div>
                 <div className="flex left mb-16">
                     <RadioGroup
@@ -282,22 +284,30 @@ function ManageResgistry({
                 </div>
                 {credentialsType === CredentialType.SAME_AS_REGISTRY && (
                     <div className="cn-7">
-                        Registry credentials will be auto injected to have accessed by selected clusters{' '}
+                        Registry credentials will be auto injected to have accessed by selected clusters
                     </div>
                 )}
                 {credentialsType === CredentialType.NAME && (
-                    <div>
-                        <input
-                            tabIndex={2}
-                            placeholder="Name"
-                            className="form__input"
-                            name={CredentialType.NAME}
-                            value={credentialValue}
-                            onChange={onClickSpecifyImagePullSecret}
-                            autoFocus
-                            autoComplete="off"
-                        />
-                    </div>
+                    <>
+                        <div>
+                            <input
+                                tabIndex={2}
+                                placeholder="Name"
+                                className="form__input"
+                                name={CredentialType.NAME}
+                                value={credentialValue}
+                                onChange={onClickSpecifyImagePullSecret}
+                                autoFocus
+                                autoComplete="off"
+                            />
+                        </div>
+                        {errorValidation && (
+                            <span className="form__error">
+                                <img src={error} alt="" className="form__icon" />
+                                This is a required Field
+                            </span>
+                        )}
+                    </>
                 )}
                 {credentialsType === CredentialType.CUSTOM_CREDENTIAL && (
                     <div className="">
@@ -364,4 +374,4 @@ function ManageResgistry({
     )
 }
 
-export default ManageResgistry
+export default ManageRegistry
