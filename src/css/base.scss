@@ -244,6 +244,14 @@ a:focus {
     padding: 2px;
 }
 
+.dc__bottom-0 {
+    bottom: 0;
+}
+
+.dc__position-fixed {
+    position: fixed;
+}
+
 .dc__position-rel {
     position: relative;
 }
@@ -1079,7 +1087,7 @@ button.anchor {
             }
         }
         .radio__item-label {
-          border-right: unset;
+            border-right: unset;
         }
         &:first-child input + .radio__item-label {
             border-top-left-radius: 4px;
@@ -1109,13 +1117,13 @@ button.anchor {
     color: var(--N900);
     border: 1px solid var(--N200);
     background-color: var(--N000);
-    &.no-content-padding{
-      .tippy-content{
-        padding: 0;
-      }
+    &.no-content-padding {
+        .tippy-content {
+            padding: 0;
+        }
     }
-    &.tippy-shadow{
-      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    &.tippy-shadow {
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
     }
 }
 
@@ -1592,6 +1600,10 @@ button.anchor {
     border: 1px solid var(--N200);
 }
 
+.dc__border-n1 {
+    border: 1px solid var(--N100);
+}
+
 .dc__border-transparent {
     border: 1px solid transparent;
 }
@@ -1628,8 +1640,8 @@ button.anchor {
   border-bottom: solid 1px var(--R200);
 }
 
-.dc__no-border{
-  border: none
+.dc__no-border {
+    border: none !important;
 }
 
 .dc__box-shadow {
@@ -2040,6 +2052,10 @@ textarea {
     height: 36px !important;
 }
 
+.h-40 {
+    height: 40px !important;
+}
+
 .h-42 {
     height: 42px !important;
 }
@@ -2056,7 +2072,15 @@ textarea {
     height: 60px !important;
 }
 
+.h-80 {
+    height: 80px !important;
+}
+
 .h-300 {
+    height: 300px !important;
+}
+
+.mh-300 {
     min-height: 300px;
 }
 
@@ -2078,6 +2102,10 @@ textarea {
 }
 
 // Line height
+.lh-14 {
+  line-height: 14px;
+}
+
 .lh-16 {
     line-height: 16px;
 }
@@ -2131,6 +2159,10 @@ textarea {
 // Margin in pixels
 .dc__m-auto {
     margin: auto;
+}
+
+.m-0-imp {
+    margin: 0 !important;
 }
 
 .m-tb-20 {
@@ -2227,25 +2259,9 @@ textarea::placeholder {
     font-style: italic !important;
 }
 
-// Start: accouncement banner
-.announcement-banner-container {
-    &.page-header-banner {
-        width: fit-content;
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translate(-50%, 0);
-    }
-
-    &.cd-trigger-announcement {
-        .info-bar-container {
-            .announcement-bar {
-                border-radius: 0;
-                border: none;
-                border-bottom: 1px solid var(--Y700);
-            }
-        }
-    }
+.dc__align-reload-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
-
-// End: accouncement banner

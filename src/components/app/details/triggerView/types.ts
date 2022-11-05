@@ -1,6 +1,6 @@
 import { RouteComponentProps } from 'react-router'
 import { HostURLConfig } from '../../../../services/service.types'
-import { DockerConfigOverrideType } from '../../../ciPipeline/types'
+import { CIBuildConfigType, DockerConfigOverrideType } from '../../../ciPipeline/types'
 import { DeploymentHistoryDetail } from '../cdDetails/cd.type'
 import { CIMaterialType } from './MaterialHistory'
 export type CDMdalTabType = 'SECURITY' | 'CHANGES'
@@ -145,7 +145,7 @@ export interface NodeAttr {
     isGitSource: boolean
     isRoot: boolean
     downstreams: string[]
-    type: 'CI' | 'GIT' | 'PRECD' | 'CD' | 'POSTCD'
+    type: 'CI' | 'GIT' | 'PRECD' | 'CD' | 'POSTCD' | 'WEBHOOK'
     parentCiPipeline?: number
     parentAppId?: number
     url?: string
@@ -326,6 +326,22 @@ export interface ApplicationConditionResponse {
 export enum PipelineType {
     CI_PIPELINE = 'CI_PIPELINE',
     CD_PIPELINE = 'CD_PIPELINE',
+    WEBHOOK = 'WEBHOOK'
+}
+
+export enum CIPipelineNodeType {
+  EXTERNAL_CI ='EXTERNAL-CI',
+  CI='CI',
+  LINKED_CI='LINKED-CI'
+}
+
+export enum WorkflowNodeType {
+    GIT= 'GIT',
+    CI = 'CI',
+    WEBHOOK = 'WEBHOOK',
+    PRE_CD = 'PRECD',
+    CD = 'CD',
+    POST_CD = 'POSTCD',
 }
 
 export interface Task {
@@ -430,7 +446,7 @@ export interface CiPipelineResult {
     appId?: number
     dockerRegistry?: string
     dockerRepository?: string
-    dockerBuildConfig?: DockerBuildConfig
+    ciBuildConfig?: CIBuildConfigType
     ciPipelines?: CiPipeline[]
     appName?: string
     version?: string

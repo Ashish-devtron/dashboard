@@ -2,6 +2,7 @@ export const RequestTimeout = 60000
 export const DEFAULT_STATUS = 'Checking Status...'
 export const Host = process.env.REACT_APP_ORCHESTRATOR_ROOT
 export const DEFAULTK8SVERSION = 'v1.16.0'
+export const TOKEN_COOKIE_NAME = 'argocd.token'
 
 export const Routes = {
     GET: 'get',
@@ -21,10 +22,12 @@ export const Routes = {
     CLUSTER: 'cluster',
 
     CD_CONFIG: 'app/cd-pipeline',
+    EXTERNAL_CI_CONFIG: 'app/external-ci',
     CD_CONFIG_PATCH: 'app/cd-pipeline/patch',
     SPECIFIC_DEPLOYMENT_CONFIG: 'app/history/deployed-configuration/all',
     RECENT_DEPLOYMENT_CONFIG: 'app/history/deployed-configuration/all/latest',
     LATEST_DEPLOYMENT_CONFIG: 'app/deployment-configuration/all/latest',
+    WORKFLOW_EDITOR: 'edit/workflow',
 
     CD_MATERIAL_GET: 'app/cd-pipeline',
     CD_TRIGGER_POST: 'app/cd-pipeline/trigger',
@@ -88,6 +91,7 @@ export const Routes = {
     COMMIT_INFO: 'app/commit-info',
     APPLICATIONS: 'api/v1/applications',
     API_TOKEN: 'api-token',
+    API_TOKEN_WEBHOOK: 'api-token/webhook',
     USER_CREATE: 'user/create',
     USER_UPDATE: 'user/update',
     USER_LIST: 'user/all',
@@ -316,6 +320,7 @@ export enum MODES {
     YAML = 'yaml',
     JSON = 'json',
     SHELL = 'shell',
+    DOCKERFILE = 'dockerfile',
 }
 
 export const HELM_APP_UNASSIGNED_PROJECT = 'unassigned'
