@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { ReactComponent as Question } from '../../assets/icons/ic-help-outline.svg'
+import { ReactComponent as InfoIcon } from '../../assets/icons/info-filled.svg'
 import { ReactComponent as Close } from '../../assets/icons/ic-cross.svg'
 import { ReactComponent as Bulb } from '../../assets/icons/ic-slant-bulb.svg'
 import { ReactComponent as Check } from '../../assets/icons/misc/checkGreen.svg'
-import { ReactComponent as Document } from '../../assets/icons/ic-document.svg'
+import { ReactComponent as Document } from '../../assets/icons/ic-note-upward.svg'
 import { ReactComponent as Add } from '../../assets/icons/ic-add.svg'
 import { ReactComponent as Edit } from '../../assets/icons/ic-pencil.svg'
 import error from '../../assets/icons/misc/errorInfo.svg'
@@ -138,30 +139,40 @@ function ManageRegistry({
     const onBlackListClusterSelection = (_selectedOption, ...args) => {
         setBlackList((_selectedOption || []) as any)
         const areAllOptionsSelected = _selectedOption.findIndex((option) => option.value === '-1') !== -1
-        if ((args[0].action === 'remove-value' || args[0].action === 'deselect-option') && args[0].removedValue.value === '-1') {
-            setBlackList([])
-        } else if (
-            (args[0].action === 'select-option' && args[0].option.value === '-1') ||
-            (!areAllOptionsSelected && _selectedOption.length === clusterOption.length - 1)
-        ) {
-            setBlackList(clusterOption)
-        } else if (areAllOptionsSelected) {
-            setBlackList(_selectedOption.filter((option) => option.value !== '-1'))
+        if (args.length > 0) {
+            if (
+                (args[0].action === 'remove-value' && args[0].removedValue.value === '-1') ||
+                (args[0].action === 'deselect-option' && args[0].option.value === '-1')
+            ) {
+                setBlackList([])
+            } else if (
+                (args[0].action === 'select-option' && args[0].option.value === '-1') ||
+                (!areAllOptionsSelected && _selectedOption.length === clusterOption.length - 1)
+            ) {
+                setBlackList(clusterOption)
+            } else if (areAllOptionsSelected) {
+                setBlackList(_selectedOption.filter((option) => option.value !== '-1'))
+            }
         }
     }
 
     const onWhiteListClusterSelection = (_selectedOption, ...args) => {
         setWhiteList((_selectedOption || []) as any)
         const areAllOptionsSelected = _selectedOption.findIndex((option) => option.value === '-1') !== -1
-        if (args[0].action === 'remove-value' && args[0].removedValue.value === '-1') {
-            setWhiteList([])
-        } else if (
-            (args[0].action === 'select-option' && args[0].option.value === '-1') ||
-            (!areAllOptionsSelected && _selectedOption.length === clusterOption.length - 1)
-        ) {
-            setWhiteList(clusterOption)
-        } else if (areAllOptionsSelected) {
-            setWhiteList(_selectedOption.filter((option) => option.value !== '-1'))
+        if (args.length > 0) {
+            if (
+                (args[0].action === 'remove-value' && args[0].removedValue.value === '-1') ||
+                (args[0].action === 'deselect-option' && args[0].option.value === '-1')
+            ) {
+                setWhiteList([])
+            } else if (
+                (args[0].action === 'select-option' && args[0].option.value === '-1') ||
+                (!areAllOptionsSelected && _selectedOption.length === clusterOption.length - 1)
+            ) {
+                setWhiteList(clusterOption)
+            } else if (areAllOptionsSelected) {
+                setWhiteList(_selectedOption.filter((option) => option.value !== '-1'))
+            }
         }
     }
 
@@ -318,10 +329,7 @@ function ManageRegistry({
                     <RadioGroup
                         className="gui-yaml-switch"
                         name="credentials"
-                        initialTab={
-                            credentialsType || CredentialType.SAME_AS_REGISTRY
-
-                        }
+                        initialTab={credentialsType || CredentialType.SAME_AS_REGISTRY}
                         disabled={false}
                         onChange={onHandleCredentialTypeChange}
                     >
@@ -329,8 +337,8 @@ function ManageRegistry({
                             value={CredentialType.SAME_AS_REGISTRY}
                             canSelect={credentialValue !== CredentialType.SAME_AS_REGISTRY}
                         >
-                            <Document className="icon-dim-12 fcn-7 mr-8" />
-                            Same as registry credentials
+                            <Document className="icon-dim-12 mr-8" />
+                            Use registry credentials
                         </RadioGroup.Radio>
                         <RadioGroup.Radio
                             value={CredentialType.NAME}
@@ -348,9 +356,13 @@ function ManageRegistry({
                     </RadioGroup>
                 </div>
                 {credentialsType === CredentialType.SAME_AS_REGISTRY && (
-                    <div className="cn-7">
-                        Registry credentials will be auto injected to have accessed by selected clusters
-                    </div>
+                    <InfoColourBar
+                        message="Clusters will be auto-injected wuth the provided registry credentials."
+                        classname="info_bar"
+                        Icon={InfoIcon}
+                        iconClass="icon-dim-20"
+                        renderActionButton={renderActionButton}
+                    />
                 )}
                 {credentialsType === CredentialType.NAME && (
                     <>
