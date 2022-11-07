@@ -7,20 +7,14 @@ import { ReactComponent as Document } from '../../assets/icons/ic-document.svg'
 import { ReactComponent as Add } from '../../assets/icons/ic-add.svg'
 import { ReactComponent as Edit } from '../../assets/icons/ic-pencil.svg'
 import error from '../../assets/icons/misc/errorInfo.svg'
-import Select from 'react-select'
-import {
-    ClearIndicator,
-    multiSelectStyles,
-    MultiValueChipContainer,
-    MultiValueRemove,
-    Option,
-    RadioGroup,
-} from '../common'
+import Select, { components } from 'react-select'
+import { ClearIndicator, multiSelectStyles, MultiValueRemove, Option, RadioGroup } from '../common'
 import InfoColourBar from '../common/infocolourBar/InfoColourbar'
 import { ReactComponent as Warn } from '../../assets/icons/ic-warning.svg'
 import { ReactComponent as DropDownIcon } from '../../assets/icons/appstatus/ic-chevron-down.svg'
 import { CredentialType, ManageRegistryType } from './dockerType'
-import Tippy from '@tippyjs/react'
+import { ReactComponent as HelpIcon } from '../../assets/icons/ic-help.svg'
+import TippyWhite from '../common/TippyWhite'
 
 function ManageRegistry({
     clusterOption,
@@ -67,8 +61,11 @@ function ManageRegistry({
     }
 
     const getPlaceholder = (): string => {
+        console.log(blackList, whiteList)
         const isWhiteList = whiteList.length > 0
-        if (isWhiteList) {
+        if ((whiteList.length === 0 && blackList.length === 5) || (blackList.length === 0 && whiteList.length === 5)) {
+            return 'None'
+        } else if (isWhiteList) {
             return `Cluster except ${appliedClusterList}`
         } else {
             return `All Cluster except ${ignoredClusterList}`
@@ -119,6 +116,53 @@ function ManageRegistry({
             </div>
         )
     }
+
+    const MultiValueChipContainer = ({ validator, ...props }) => {
+        const { children, data, innerProps, selectProps } = props
+        const { label, value } = data
+        if (props.selectProps.value.length === props.selectProps.options.length && value !== '-1') {
+            return null
+        }
+        return (
+            <components.MultiValueContainer {...{ data, innerProps, selectProps }}>
+                <div className={`flex fs-12 pl-4 pr-4`}>
+                    <div className="cn-9">{label}</div>
+                </div>
+                {children[1]}
+            </components.MultiValueContainer>
+        )
+    }
+
+    const onBlackListClusterSelection = (_selectedOption, ...args) => {
+        setBlackList((_selectedOption || []) as any)
+        const areAllOptionsSelected = _selectedOption.findIndex((option) => option.value === '-1') !== -1
+        if (args[0].action === 'remove-value' && args[0].removedValue.value === '-1') {
+            setBlackList([])
+        } else if (
+            (args[0].action === 'select-option' && args[0].option.value === '-1') ||
+            (!areAllOptionsSelected && _selectedOption.length === clusterOption.length - 1)
+        ) {
+            setBlackList(clusterOption)
+        } else if (areAllOptionsSelected) {
+            setBlackList(_selectedOption.filter((option) => option.value !== '-1'))
+        }
+    }
+
+    const onWhiteListClusterSelection = (_selectedOption, ...args) => {
+        setWhiteList((_selectedOption || []) as any)
+        const areAllOptionsSelected = _selectedOption.findIndex((option) => option.value === '-1') !== -1
+        if (args[0].action === 'remove-value' && args[0].removedValue.value === '-1') {
+            setWhiteList([])
+        } else if (
+            (args[0].action === 'select-option' && args[0].option.value === '-1') ||
+            (!areAllOptionsSelected && _selectedOption.length === clusterOption.length - 1)
+        ) {
+            setWhiteList(clusterOption)
+        } else if (areAllOptionsSelected) {
+            setWhiteList(_selectedOption.filter((option) => option.value !== '-1'))
+        }
+    }
+
     const renderIgnoredCluster = (): JSX.Element => {
         if (whiteList.length > 0) {
             return renderNoSelectionView()
@@ -128,6 +172,7 @@ function ManageRegistry({
             return (
                 <Select
                     isDisabled={whiteList.length > 0}
+                    placeholder= 'Select cluster'
                     components={{
                         MultiValueContainer: ({ ...props }) => <MultiValueChipContainer {...props} validator={null} />,
                         DropdownIndicator: null,
@@ -153,7 +198,7 @@ function ManageRegistry({
                     options={clusterOption}
                     hideSelectedOptions={false}
                     value={blackList}
-                    onChange={(selected, actionMeta) => setBlackList((selected || []) as any)}
+                    onChange={(selected, { ...args }) => onBlackListClusterSelection(selected, { ...args })}
                 />
             )
         }
@@ -174,6 +219,7 @@ function ManageRegistry({
                         MultiValueRemove,
                         Option,
                     }}
+                    placeholder= 'Select cluster'
                     isDisabled={blackList.length > 0}
                     styles={{
                         ...multiSelectStyles,
@@ -189,11 +235,11 @@ function ManageRegistry({
                     }}
                     closeMenuOnSelect={false}
                     isMulti
-                    name="blacklist"
+                    name="whitelist"
                     options={clusterOption}
                     hideSelectedOptions={false}
                     value={whiteList}
-                    onChange={(selected) => setWhiteList((selected || []) as any)}
+                    onChange={(selected, { ...args }) => onWhiteListClusterSelection(selected, { ...args })}
                 />
             )
         }
@@ -229,23 +275,22 @@ function ManageRegistry({
             >
                 <div className="flex left">
                     <div className="fw-6">Manage access of registry credentials</div>
-                    <Tippy
-                        className="default-tt pl-20"
-                        arrow={true}
-                        placement="top"
-                        content={
-                            <div>
-                                <div className="fw-6">Manage access of registry credentials</div>
-                                <div style={{ display: 'block', width: '160px' }}>
-                                    Clusters need permission to pull container image from private repository in the
-                                    registry. You can control which clusters have access to the pull image from private
-                                    repositories.
-                                </div>
-                            </div>
-                        }
-                    >
-                        <Question className="icon-dim-20 cursor ml-8" />
-                    </Tippy>
+                    <TippyWhite
+                                className="w-332"
+                                placement="top"
+                                Icon={HelpIcon}
+                                iconClass="fcv-5"
+                                heading="Manage access of registry credentials"
+                                infoText="Clusters need permission to pull container image from private repository in
+                                            the registry. You can control which clusters have access to the pull image
+                                            from private repositories.
+                                        "
+                                showCloseButton={true}
+                                trigger="click"
+                                interactive={true}
+                            >
+                                <Question className="icon-dim-16 fcn-6 ml-4 cursor" />
+                            </TippyWhite>
                 </div>
                 <DropDownIcon className="icon-dim-24 rotate pointer" />
             </div>
@@ -273,10 +318,10 @@ function ManageRegistry({
                         name="credentials"
                         initialTab={
                             credentialsType === CredentialType.SAME_AS_REGISTRY
-                                ? 'SAME_AS_REGISTRY'
+                                ? CredentialType.SAME_AS_REGISTRY
                                 : credentialsType === CredentialType.NAME
-                                ? 'NAME'
-                                : 'CUSTOM_CREDENTIAL'
+                                ? CredentialType.NAME
+                                : CredentialType.CUSTOM_CREDENTIAL=''
                         }
                         disabled={false}
                         onChange={onHandleCredentialTypeChange}
@@ -334,10 +379,10 @@ function ManageRegistry({
                     <div className="cn-7 ">
                         <div className="flexbox w-100 mb-16">
                             <div className="w-50 mr-8">
-                                <div className='mb-6'> Registry URL</div>
+                                <div className="mb-6"> Registry URL</div>
                                 <input
                                     tabIndex={3}
-                                    placeholder="Enter registry name"
+                                    placeholder="Enter registry URL"
                                     className="form__input"
                                     name="server"
                                     value={customCredential?.server}
@@ -347,7 +392,7 @@ function ManageRegistry({
                                 />
                             </div>
                             <div className="w-50">
-                                <div className='mb-6'>Email</div>
+                                <div className="mb-6">Email</div>
                                 <input
                                     tabIndex={4}
                                     placeholder="Enter Email"
@@ -362,7 +407,7 @@ function ManageRegistry({
                         </div>
                         <div className="flexbox w-100">
                             <div className="w-50 mr-8">
-                                <div className='mb-6'>Username</div>
+                                <div className="mb-6">Username</div>
                                 <input
                                     tabIndex={5}
                                     placeholder="Enter username"
@@ -375,7 +420,7 @@ function ManageRegistry({
                                 />
                             </div>
                             <div className="w-50">
-                                <div className='mb-6'>Password</div>
+                                <div className="mb-6">Password</div>
                                 <input
                                     tabIndex={6}
                                     placeholder="Enter password"
