@@ -1,36 +1,46 @@
-import React, { useState } from 'react'
-
+import React, { useState, useRef,  useEffect } from 'react'
 import { ReactComponent as DropDownIcon } from '../../../assets/icons/ic-chevron-down.svg'
 import { ReactComponent as AlertTriangle } from '../../../assets/icons/ic-alert-triangle.svg'
 import { not } from '../../common'
 import IndexStore from './index.store'
 import { renderErrorHeaderMessage } from '../../common/error/error.utils'
+import { SyncErrorType } from './appDetails.type'
+import { AppDetailsErrorType } from '../../../config'
 
-const SyncErrorComponent: React.FC<{ appStreamData; showApplicationDetailedModal? }> = ({
+const SyncErrorComponent: React.FC<SyncErrorType> = ({
     appStreamData,
     showApplicationDetailedModal,
 }) => {
+
     const [collapsed, toggleCollapsed] = useState<boolean>(true)
-    const appDetails = IndexStore.getAppDetails()
+    const appDetails = IndexStore.getAppDetails();
     const conditions = appStreamData?.result?.application?.status?.conditions || []
-    if (!appDetails) return null
+    const isImagePullBackOff = useRef(null)
 
-    let isImagePullBackOff
-    for (let index = 0; index < appDetails?.resourceTree?.nodes?.length; index++) {
-        const node = appDetails.resourceTree.nodes[index]
-        if (node.info?.length) {
-            for (let index = 0; index < node.info.length; index++) {
-                const info = node.info[index]
-                if (info.value.toLowerCase() === 'errimagepull' || info.value.toLowerCase() === 'imagepullbackoff') {
-                    isImagePullBackOff = true
-                    break
-                }
-            }
-            if (isImagePullBackOff) break
-        }
-    }
+    useEffect(() => {
+      if (isImagePullBackOff.current) {
+        for (let index = 0; index < appDetails.resourceTree?.nodes?.length; index++) {
+          const node = appDetails.resourceTree.nodes[index]
+          if (node.info?.length) {
+              for (let index = 0; index < node.info.length; index++) {
+                  const info = node.info[index]
+                  if (
+                      info.value.toLowerCase() === AppDetailsErrorType.ERRIMAGEPULL ||
+                      info.value.toLowerCase() === AppDetailsErrorType.IMAGEPULLBACKOFF
+                  ) {
+                    isImagePullBackOff.current = true
+                      break
+                  }
+              }
+              if (isImagePullBackOff) break
+          }
+      }
+      }
+  }, [appDetails])
 
-    if (conditions.length === 0 && !isImagePullBackOff) return null
+
+
+    if (!appDetails || (conditions.length === 0 && !isImagePullBackOff)) return null
 
     const toggleErrorHeader = () => {
         toggleCollapsed(not)
@@ -38,7 +48,7 @@ const SyncErrorComponent: React.FC<{ appStreamData; showApplicationDetailedModal
 
     return (
         <div className="top flex left column w-100 bcr-1 pl-20 pr-20 fs-13">
-            <div className="flex left w-100 pointer" style={{ height: '56px' }} onClick={toggleErrorHeader}>
+            <div className="flex left w-100 cursor h-56" onClick={toggleErrorHeader}>
                 <AlertTriangle className="icon-dim-20 mr-8" />
                 <span className="cr-5 fs-14 fw-6">
                     {conditions.length + (isImagePullBackOff && !appDetails.externalCi ? 1 : 0)} Errors
@@ -60,17 +70,13 @@ const SyncErrorComponent: React.FC<{ appStreamData; showApplicationDetailedModal
                     <tbody>
                         {conditions.map((condition) => (
                             <tr>
-                                <td className="pb-8" style={{ minWidth: '200px' }}>
-                                    {condition.type}
-                                </td>
+                                <td className="pb-8 min-width">{condition.type}</td>
                                 <td className="pl-24 pb-8">{condition.message}</td>
                             </tr>
                         ))}
                         {isImagePullBackOff && !appDetails.externalCi && (
                             <tr>
-                                <td className="pb-8" style={{ minWidth: '200px' }}>
-                                    ImagePullBackOff
-                                </td>
+                                <td className="pb-8 min-width">ImagePullBackOff</td>
                                 <td className="pl-24 pb-8">
                                     {renderErrorHeaderMessage(appDetails, 'sync-error', showApplicationDetailedModal)}
                                 </td>
