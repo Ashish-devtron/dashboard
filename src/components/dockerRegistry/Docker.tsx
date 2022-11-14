@@ -32,12 +32,15 @@ import ManageRegistry from './ManageRegistry'
 import { useHistory, useParams, useRouteMatch } from 'react-router-dom'
 import { CredentialType, CustomCredential } from './dockerType'
 import Reload from '../Reload/Reload'
+import TippyWhite from '../common/TippyWhite'
+import { ReactComponent as HelpIcon } from '../../assets/icons/ic-help.svg'
 
 enum CERTTYPE {
     SECURE = 'secure',
     INSECURE = 'insecure',
     SECURE_WITH_CERT = 'secure-with-cert',
 }
+
 
 export default function Docker({ ...props }) {
     const [loading, result, error, reload] = useAsync(getDockerRegistryList)
@@ -48,7 +51,7 @@ export default function Docker({ ...props }) {
         setClusterLoader(true)
         await getClusterListMinWithoutAuth()
             .then((clusterListRes) => {
-                if (clusterListRes.result && Array.isArray(clusterListRes.result)) {
+                if (Array.isArray(clusterListRes.result)) {
                     setClusterOptions([
                         { label: 'All clusters', value: '-1' },
                         ...clusterListRes.result.map((cluster) => {
@@ -85,7 +88,7 @@ export default function Docker({ ...props }) {
     dockerRegistryList = [{ id: null }].concat(dockerRegistryList)
     return (
         <section className="mt-16 mb-16 ml-20 mr-20 global-configuration__component flex-1">
-            <h2 className="form__title">Container registries</h2>
+            <h2 className="form__title">Container Registries</h2>
             <p className="form__subtitle">
                 Manage your organization’s container registries.&nbsp;
                 <a
@@ -299,6 +302,13 @@ function DockerForm({
 
     const isCustomScript = ipsConfig?.credentialType === CredentialType.CUSTOM_CREDENTIAL
 
+    const defaultCustomCredential = {
+      server: '',
+      email: '',
+      username: '',
+      password: ''
+    }
+
     const [deleting, setDeleting] = useState(false)
     const [confirmation, toggleConfirmation] = useState(false)
     const [isIAMAuthType, setIAMAuthType] = useState(!awsAccessKeyId && !awsSecretAccessKey)
@@ -311,7 +321,7 @@ function DockerForm({
     const [credentialValue, setCredentialValue] = useState<string>(isCustomScript ? '' : ipsConfig?.credentialValue)
     const [showManageModal, setManageModal] = useState(false)
     const [customCredential, setCustomCredential] = useState<CustomCredential>(
-        isCustomScript ? JSON.parse(ipsConfig?.credentialValue) : '',
+        isCustomScript && ipsConfig?.credentialValue ? JSON.parse(ipsConfig.credentialValue) : defaultCustomCredential,
     )
     const [errorValidation, setErrorValidation] = useState<boolean>(false)
 
@@ -401,22 +411,26 @@ function DockerForm({
                   }
                 : {}),
             ipsConfig: {
-                id: 0 || ipsConfig.id,
+                id: ipsConfig.id,
                 credentialType: credentialsType,
                 credentialValue:
                     credentialsType === CredentialType.CUSTOM_CREDENTIAL
                         ? JSON.stringify(customCredential)
                         : credentialValue,
                 appliedClusterIdsCsv: appliedClusterIdsCsv,
-                ignoredClusterIdsCsv: whiteList.length === 0 && (blackList.length === 0  || blackList.findIndex((cluster) => cluster.value === '-1' ) >= 0) ? '-1' : ignoredClusterIdsCsv,
+                ignoredClusterIdsCsv:
+                    whiteList.length === 0 &&
+                    (blackList.length === 0 || blackList.findIndex((cluster) => cluster.value === '-1') >= 0)
+                        ? '-1'
+                        : ignoredClusterIdsCsv,
             },
         }
     }
 
     async function onSave() {
         if (credentialsType === CredentialType.NAME && !credentialValue) {
-          setErrorValidation(true)
-          return
+            setErrorValidation(true)
+            return
         }
 
         let awsRegion
@@ -434,6 +448,7 @@ function DockerForm({
                 toggleCollapse(true)
             }
             await reload()
+            await setToggleCollapse()
             toast.success('Successfully saved.')
         } catch (err) {
             showError(err)
@@ -590,8 +605,14 @@ function DockerForm({
     })
 
     const renderRegistryCredentialText = () => {
-        if (ipsConfig?.ignoredClusterIdsCsv === '-1') {
+        if (
+            ipsConfig?.ignoredClusterIdsCsv === '-1' ||
+            ignoredClusterList.findIndex((cluster) => cluster === 'All clusters') >= 0
+        ) {
             return <div className="fw-6">No Cluster</div>
+        }
+        if (appliedClusterList.findIndex((cluster) => cluster === 'All clusters') >= 0) {
+            return <div className="fw-6">All Clusters</div>
         }
         if (appliedClusterList.length > 0) {
             return <div className="fw-6"> {`Clusters: ${appliedClusterList}`} </div>
@@ -618,7 +639,7 @@ function DockerForm({
             <div className="form__row form__row--two-third">
                 <div className="flex left column top">
                     <label htmlFor="" className="form__label w-100">
-                        Registry type*
+                        Registry Type*
                     </label>
                     <ReactSelect
                         className="m-0 w-100"
@@ -833,27 +854,26 @@ function DockerForm({
                 </div>
             )}
             {!showManageModal ? (
-                <div className="en-2 bw-1 br-4 pt-10 pb-10 pl-16 pr-16 mb-20">
+                <div className="en-2 bw-1 br-4 pt-10 pb-10 pl-16 pr-16 mb-20 fs-13">
                     <div className="flex dc__content-space">
-                        <div className="cn-7 flex left fs-13">
+                        <div className="cn-7 flex left ">
                             Registry credential access is auto injected to
-                            <Tippy
-                                className="default-tt pl-20"
-                                arrow={true}
+                            <TippyWhite
+                                className="w-332"
                                 placement="top"
-                                content={
-                                    <div>
-                                        <div className="fw-6">Manage access of registry credentials</div>
-                                        <div style={{ display: 'block', width: '160px' }}>
-                                            Clusters need permission to pull container image from private repository in
+                                Icon={HelpIcon}
+                                iconClass="fcv-5"
+                                heading="Manage access of registry credentials"
+                                infoText="Clusters need permission to pull container image from private repository in
                                             the registry. You can control which clusters have access to the pull image
                                             from private repositories.
-                                        </div>
-                                    </div>
-                                }
+                                        "
+                                showCloseButton={true}
+                                trigger="click"
+                                interactive={true}
                             >
-                                <Question className="icon-dim-20 cursor ml-8" />
-                            </Tippy>
+                                <Question className="icon-dim-16 fcn-6 ml-4 cursor" />
+                            </TippyWhite>
                         </div>
                         <div className="cb-5 cursor" onClick={onClickShowManageModal}>
                             Manage

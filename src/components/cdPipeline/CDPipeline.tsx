@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { SourceTypeMap, TriggerType, ViewType } from '../../config'
+import {SourceTypeMap, DeploymentAppType, TriggerType, ViewType} from '../../config'
 import { ServerErrors } from '../../modals/commonTypes'
 import { RadioGroup, RadioGroupItem } from '../common/formFields/RadioGroup'
 import {
@@ -110,6 +110,7 @@ export default class CDPipeline extends Component<CDPipelineProps, CDPipelineSta
                 isClusterCdActive: false,
                 parentPipelineId: +parentPipelineId,
                 parentPipelineType: parentPipelineType,
+                deploymentAppType: ""
             },
             showPreStage: false,
             showDeploymentStage: true,
@@ -475,6 +476,12 @@ export default class CDPipeline extends Component<CDPipelineProps, CDPipelineSta
         this.setState({ pipelineConfig })
     }
 
+    handleDeploymentAppTypeChange = (event) =>{
+        let { pipelineConfig } = {...this.state }
+        pipelineConfig.deploymentAppType = event.target.value
+        this.setState( {pipelineConfig})
+    }
+
     handlePipelineName = (event) => {
         let { pipelineConfig } = { ...this.state }
         pipelineConfig.name = event.target.value
@@ -556,7 +563,8 @@ export default class CDPipeline extends Component<CDPipelineProps, CDPipelineSta
             !!this.state.pipelineConfig.environmentId &&
             this.validationRules.name(this.state.pipelineConfig.name).isValid &&
             !!this.state.pipelineConfig.namespace &&
-            !!this.state.pipelineConfig.triggerType
+            !!this.state.pipelineConfig.triggerType &&
+            !!this.state.pipelineConfig.deploymentAppType
 
         if (!valid) {
             this.setState({ loadingData: false })
@@ -943,6 +951,25 @@ export default class CDPipeline extends Component<CDPipelineProps, CDPipelineSta
         } else return null
     }
 
+
+    renderDeploymentAppType() {
+        return (
+            <div className="form__row">
+                <label className="form__label form__label--sentence dc__bold">
+                    How do you want to deploy?
+                </label>
+                <RadioGroup
+                    value={this.state.pipelineConfig.deploymentAppType}
+                    name="deployment-app-type"
+                    onChange={this.handleDeploymentAppTypeChange}
+                >
+                    <RadioGroupItem value={DeploymentAppType.Helm}> Helm </RadioGroupItem>
+                    <RadioGroupItem value={DeploymentAppType.GitOps}> GitOps </RadioGroupItem>
+                </RadioGroup>
+            </div>
+        )
+    }
+
     renderDeleteCDModal() {
         if (this.props.match.params.cdPipelineId) {
             if (this.state.showDeleteModal) {
@@ -1217,6 +1244,7 @@ export default class CDPipeline extends Component<CDPipelineProps, CDPipelineSta
                 </div>
                 {this.state.showDeploymentStage ? (
                     <>
+                        {this.props.match.params.cdPipelineId ? null: this.renderDeploymentAppType()}
                         {this.renderEnvNamespaceAndTriggerType()}
                         {this.renderDeploymentStrategy()}
                     </>

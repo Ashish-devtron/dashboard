@@ -1977,6 +1977,10 @@ textarea {
     width: 300px;
 }
 
+.w-332 {
+  width: 332px;
+}
+
 .w-400 {
     width: 400px;
 }
@@ -2012,6 +2016,11 @@ textarea {
 
 .w-auto {
     width: auto;
+}
+
+//min width
+.min-w-200 {
+  min-width: 200px
 }
 
 // Height in pixels
@@ -2066,6 +2075,10 @@ textarea {
 
 .h-48 {
     height: 48px !important;
+}
+
+.h-56 {
+  height: 56px !important;
 }
 
 .h-60 {

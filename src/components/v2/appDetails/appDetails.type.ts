@@ -363,3 +363,8 @@ export interface StatusFilterButtonType {
   nodes: Array<Node>
   handleFilterClick?: (selectedFilter: string) => void
 }
+
+export interface SyncErrorType {
+  appStreamData: AppStreamData
+  showApplicationDetailedModal? : () => void
+}
