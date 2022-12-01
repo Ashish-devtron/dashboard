@@ -45,6 +45,14 @@ export class MaterialView extends Component<MaterialViewProps, MaterialViewState
         })
     }
 
+    setToggleCollapse= () => {
+        this.props.toggleCollapse(()=>{});
+        this.setState(()=>{
+            return{ confirmation: false}
+            })
+        
+    }
+
     renderCollapsedView() {
         if ((this.props.material).id) {
             return <div key={`${(this.props.material).id}`} className="white-card artifact-collapsed" tabIndex={0}
@@ -100,7 +108,7 @@ export class MaterialView extends Component<MaterialViewProps, MaterialViewState
         return <form key={`${(this.props.material).id}`} className="white-card p-20 mb-16">
             <div className="mb-20 cn-9 fs-16 fw-6 white-card__header--form">
                 {(this.props.material).id ? "Edit Git Repository" : "Add Git Repository"}
-                {(this.props.material).id ? <button type="button" className="dc__transparent collapse-button" tabIndex={0} onClick={this.props.toggleCollapse}>
+                {(this.props.material).id ? <button type="button" className="dc__transparent collapse-button" tabIndex={0} onClick={this.setToggleCollapse}>
                     <Down className="collapsed__icon icon-dim-20" style={{ transform: 'rotateX(180deg)' }} />
                 </button> : null}
             </div>
@@ -296,9 +304,11 @@ export class MaterialView extends Component<MaterialViewProps, MaterialViewState
                     payload={this.getMaterialPayload()}
                     title={this.props.material.name}
                     toggleConfirmation={this.toggleConfirmation}
-                    component={DeleteComponentsName.MaterialView}
+                    component={DeleteComponentsName.GitRepo}
                     confirmationDialogDescription={this.props.isMultiGit ? DC_MATERIAL_VIEW__ISMULTI_CONFIRMATION_MESSAGE : DC_MATERIAL_VIEW_ISSINGLE_CONFIRMATION_MESSAGE}
                     reload={this.props.reload}
+                    // triggerTarget= {this.props.triggerTarget}
+                    toggleRepoSelectionTippy={this.props.toggleRepoSelectionTippy}
           />
              }
         </form>

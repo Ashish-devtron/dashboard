@@ -18,6 +18,7 @@ import {
     ConfirmationDialog,
     useAsync,
     ErrorScreenManager,
+    ConditionalWrap,
 } from '../../../common'
 import { getAppConfigStatus, getAppOtherEnvironment, getWorkflowList } from '../../../../services/service'
 import { deleteApp } from './appConfig.service'
@@ -26,6 +27,7 @@ import { ReactComponent as Dropdown } from '../../../../assets/icons/ic-chevron-
 import { ReactComponent as Lock } from '../../../../assets/icons/ic-locked.svg'
 import { ReactComponent as Help } from '../../../../assets/icons/ic-help.svg'
 import warn from '../../../../assets/icons/ic-warning.svg'
+import DockerFileInUse from '../../../../assets/img/ic-dockerfile-in-use.png'
 import { toast } from 'react-toastify'
 import './appConfig.scss'
 import { DOCUMENTATION } from '../../../../config'
@@ -46,6 +48,9 @@ import {
 import { getUserRole } from '../../../userGroups/userGroup.service'
 import ExternalLinks from '../../../externalLinks/ExternalLinks'
 import { UserRoleType } from '../../../userGroups/userGroups.types'
+import TippyCustomized, { TippyTheme } from '../../../common/TippyCustomized'
+import { DeleteComponentsName } from '../../../../config/constantMessaging'
+import { DC_MATERIAL_VIEW__ISMULTI_CONFIRMATION_MESSAGE } from '../../../../config/constantMessaging'
 
 const MaterialList = lazy(() => import('../../../material/MaterialList'))
 const CIConfig = lazy(() => import('../../../ciConfig/CIConfig'))
@@ -199,6 +204,7 @@ export default function AppConfig({ appName }: AppConfigProps) {
     const history = useHistory()
     const [environments, setEnvironments] = useState([])
     const [userRole, setUserRole] = useState<UserRoleType>()
+    const [showCannotDeleteTooltip, setShowCannotDeleteTooltip] = useState(false)
 
     const [state, setState] = useState<AppConfigState>({
         view: ViewType.LOADING,
@@ -390,6 +396,10 @@ export default function AppConfig({ appName }: AppConfigProps) {
             : ''
     }
 
+    function toggleRepoSelectionTippy() {
+        setShowCannotDeleteTooltip(!showCannotDeleteTooltip)
+    }
+
     if (state.view === ViewType.LOADING) {
         return <Progressing pageLoader />
     } else if (state.view === ViewType.ERROR) {
@@ -397,19 +407,25 @@ export default function AppConfig({ appName }: AppConfigProps) {
     } else {
         const _canShowExternalLinks =
             userRole === UserRoleType.SuperAdmin || userRole === UserRoleType.Admin || userRole === UserRoleType.Manager
+        const triggerTargetBuildConfig = document.querySelectorAll('button.delete')[1]
+
         return (
             <>
                 <div className={`app-compose ${getAdditionalParentClass()}`}>
                     <div
-                        className={`app-compose__nav flex column left top dc__position-rel dc__overflow-scroll ${
-                            state.isCDPipeline ? 'hide-app-config-help' : ''
-                        } ${_canShowExternalLinks ? '' : 'hide-external-links'}`}
+                        className={`app-compose__nav flex column left top ${
+                            showCannotDeleteTooltip ? '' : 'dc__position-rel'
+                        } dc__overflow-scroll ${state.isCDPipeline ? 'hide-app-config-help' : ''} ${
+                            _canShowExternalLinks ? '' : 'hide-external-links'
+                        }`}
                     >
                         <Navigation
                             deleteApp={showDeleteConfirmation}
                             navItems={state.navItems}
                             isCDPipeline={state.isCDPipeline}
                             canShowExternalLinks={_canShowExternalLinks}
+                            showCannotDeleteTooltip={showCannotDeleteTooltip}
+                            toggleRepoSelectionTippy={toggleRepoSelectionTippy}
                         />
                     </div>
                     <div className="app-compose__main">
@@ -426,6 +442,7 @@ export default function AppConfig({ appName }: AppConfigProps) {
                             workflowsRes={state.workflowsRes}
                             userRole={userRole}
                             canShowExternalLinks={_canShowExternalLinks}
+                            toggleRepoSelectionTippy={toggleRepoSelectionTippy}
                         />
                     </div>
                 </div>
@@ -475,7 +492,14 @@ function renderNavItem(item: CustomNavItemsType) {
     )
 }
 
-function Navigation({ navItems, deleteApp, isCDPipeline, canShowExternalLinks }: AppConfigNavigationProps) {
+function Navigation({
+    navItems,
+    deleteApp,
+    isCDPipeline,
+    canShowExternalLinks,
+    showCannotDeleteTooltip,
+    toggleRepoSelectionTippy,
+}: AppConfigNavigationProps) {
     const location = useLocation()
     const selectedNav = navItems.filter((navItem) => location.pathname.indexOf(navItem.href) >= 0)[0]
     return (
@@ -483,6 +507,7 @@ function Navigation({ navItems, deleteApp, isCDPipeline, canShowExternalLinks }:
             {!isCDPipeline && <AppConfigurationCheckBox selectedNav={selectedNav} />}
             {navItems.map((item) => {
                 if (item.stage === 'EXTERNAL_LINKS') {
+                    const triggerTargetBuildConfig = document.querySelectorAll('a.app-compose__nav-item')[1]
                     return (
                         canShowExternalLinks && (
                             <div key={item.stage}>
@@ -492,7 +517,35 @@ function Navigation({ navItems, deleteApp, isCDPipeline, canShowExternalLinks }:
                         )
                     )
                 } else if (item.stage !== 'ENV_OVERRIDE' || (item.stage === 'ENV_OVERRIDE' && item.isLocked)) {
-                    return renderNavItem(item)
+                    return (
+                        <ConditionalWrap
+                            condition={showCannotDeleteTooltip && item.stage === STAGE_NAME.CI_CONFIG}
+                            wrap={(children) => (
+                                <TippyCustomized
+                                    theme={TippyTheme.black}
+                                    className="w-280 ml-2"
+                                    placement="right"
+                                    iconPath={DockerFileInUse}
+                                    visible={showCannotDeleteTooltip}
+                                    iconClass="repo-configured-icon"
+                                    iconSize={32}
+                                    infoTextHeading={`This ${DeleteComponentsName.GitRepo} is configured as source for Dockerfile`}
+                                    infoText={DC_MATERIAL_VIEW__ISMULTI_CONFIRMATION_MESSAGE}
+                                    showCloseButton={true}
+                                    trigger="manual"
+                                    interactive={true}
+                                    showOnCreate={true}
+                                    arrow={true}
+                                    animation="shift-toward-subtle"
+                                    onClose={toggleRepoSelectionTippy}
+                                >
+                                    <div>{children}</div>
+                                </TippyCustomized>
+                            )}
+                        >
+                            {renderNavItem(item)}
+                        </ConditionalWrap>
+                    )
                 } else {
                     return <EnvironmentOverrideRouter key={item.title} />
                 }
@@ -519,6 +572,7 @@ function AppComposeRouter({
     workflowsRes,
     userRole,
     canShowExternalLinks,
+    toggleRepoSelectionTippy,
 }: AppComposeRouterProps) {
     const { path } = useRouteMatch()
 
@@ -531,6 +585,7 @@ function AppComposeRouter({
                             <MaterialList
                                 respondOnSuccess={respondOnSuccess}
                                 isWorkflowEditorUnlocked={isUnlocked.workflowEditor}
+                                toggleRepoSelectionTippy={toggleRepoSelectionTippy}
                             />
                             <NextButton
                                 currentStageName={STAGE_NAME.GIT_MATERIAL}

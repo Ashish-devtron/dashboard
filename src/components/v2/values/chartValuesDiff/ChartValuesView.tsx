@@ -25,7 +25,7 @@ import {
     updateChartValues,
 } from '../../../charts/charts.service'
 import { ServerErrors } from '../../../../modals/commonTypes'
-import { ConfigurationType, SERVER_MODE, URLS, DEVTRON_DEFAULT_CHART_NAME, DEVTRON_DEFAULT_NAMESPACE } from '../../../../config'
+import { ConfigurationType, SERVER_MODE, URLS, checkIfDevtronOperatorHelmRelease } from '../../../../config'
 import YAML from 'yaml'
 import {
     ChartEnvironmentSelector,
@@ -1183,7 +1183,7 @@ function ChartValuesView({
     }
 
     const renderData = () => {
-        const deployedAppDetail = isExternalApp && appId.split('|')
+        const deployedAppDetail = isExternalApp && appId && appId.split('|')
         return (
             <div
                 className={`chart-values-view__container bcn-0 ${
@@ -1283,13 +1283,12 @@ function ChartValuesView({
                                 hideCreateNewOption={isCreateValueView}
                             />
                         )}
+
                         {!isDeployChartView &&
                             chartValueId !== '0' &&
                             !(
                                 deployedAppDetail &&
-                                deployedAppDetail[2] === DEVTRON_DEFAULT_CHART_NAME &&
-                                deployedAppDetail[1] === DEVTRON_DEFAULT_NAMESPACE &&
-                                deployedAppDetail[0] === '1'
+                                checkIfDevtronOperatorHelmRelease(deployedAppDetail[2], deployedAppDetail[1], deployedAppDetail[0])
                             ) && (
                                 <DeleteApplicationButton
                                     type={isCreateValueView ? 'preset value' : 'Application'}
