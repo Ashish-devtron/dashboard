@@ -1,3 +1,4 @@
+import React from 'react'
 import { AppEnvironment, AppOtherEnvironment } from '../../../../services/service.types'
 import { UserRoleType } from '../../../userGroups/userGroups.types'
 import { WorkflowResult } from '../triggerView/types'
@@ -60,6 +61,7 @@ export interface AppConfigNavigationProps {
     canShowExternalLinks: boolean
     showCannotDeleteTooltip: boolean
     toggleRepoSelectionTippy: () => void
+    getRepo: string
 }
 
 export interface AppComposeRouterProps {
@@ -76,6 +78,7 @@ export interface AppComposeRouterProps {
     userRole: UserRoleType
     canShowExternalLinks: boolean
     toggleRepoSelectionTippy: () => void
+    setRepoState: React.Dispatch<React.SetStateAction<string>>
 }
 
 export interface EnvironmentOverridesProps {
