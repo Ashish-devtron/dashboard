@@ -117,7 +117,7 @@ export default class CDPipeline extends Component<CDPipelineProps, CDPipelineSta
                 isClusterCdActive: false,
                 parentPipelineId: +parentPipelineId,
                 parentPipelineType: parentPipelineType,
-                deploymentAppType: DeploymentAppType.Helm,
+                deploymentAppType: "",
             },
             showPreStage: false,
             showDeploymentStage: true,
@@ -572,7 +572,7 @@ export default class CDPipeline extends Component<CDPipelineProps, CDPipelineSta
             this.validationRules.name(this.state.pipelineConfig.name).isValid &&
             !!this.state.pipelineConfig.namespace &&
             !!this.state.pipelineConfig.triggerType &&
-            !!this.state.pipelineConfig.deploymentAppType
+            !! ( this.state.pipelineConfig.deploymentAppType || window._env_.HIDE_GITOPS_OR_HELM_OPTION)
 
         if (!valid) {
             this.setState({ loadingData: false })
@@ -985,7 +985,7 @@ export default class CDPipeline extends Component<CDPipelineProps, CDPipelineSta
             <div className="form__row">
                 <label className="form__label form__label--sentence dc__bold">How do you want to deploy?</label>
                 <RadioGroup
-                    value={this.state.pipelineConfig.deploymentAppType}
+                    value={this.state.pipelineConfig.deploymentAppType ? this.state.pipelineConfig.deploymentAppType: DeploymentAppType.Helm}
                     name="deployment-app-type"
                     onChange={this.handleDeploymentAppTypeChange}
                     disabled={!!this.props.match.params.cdPipelineId}
