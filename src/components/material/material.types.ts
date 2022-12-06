@@ -3,7 +3,7 @@ import { RouteComponentProps } from 'react-router';
 export interface MaterialListProps extends RouteComponentProps<{ appId: string; }> {
     respondOnSuccess: () => void;
     isWorkflowEditorUnlocked: boolean;
-    toggleRepoSelectionTippy: () => void;
+    toggleRepoSelectionTippy?: () => void;
     setRepo?: React.Dispatch<React.SetStateAction<string>>;
 }
 
@@ -75,8 +75,8 @@ export interface MaterialViewProps {
     appId?: number;
     reload: ()=> void;
     preventRepoDelete?: boolean;
-    toggleRepoSelectionTippy?: () => void;
-    setRepo?: React.Dispatch<React.SetStateAction<string>>;
+    toggleRepoSelectionTippy?: () => void
+    setRepo?: React.Dispatch<React.SetStateAction<string>>
 }
 
 export interface MaterialViewState {
