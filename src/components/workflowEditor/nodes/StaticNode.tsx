@@ -2,6 +2,8 @@ import React, { Component } from 'react'
 import branch from '../../../assets/icons/misc/branch.svg'
 import Tippy from '@tippyjs/react'
 import { CiPipelineSourceConfig } from '../../ciPipeline/CiPipelineSourceConfig'
+import { ConditionalWrap } from '../../common'
+import { Link } from 'react-router-dom'
 
 export interface StaticNodeProps {
     x: number
@@ -17,12 +19,20 @@ export interface StaticNodeProps {
     sourceType: string
     regex?: string
     primaryBranchAfterRegex?: string
+    to?: string
+    hideWebhookTippy?: () => void
+    handleGoToWorkFlowEditor?: (...args) => void
 }
 
 export class StaticNode extends Component<StaticNodeProps> {
     renderCardContent() {
         return (
-            <div className="workflow-node workflow-node--static">
+            <div
+                className={`workflow-node workflow-node--static ${
+                    this.props.branch === 'Not Configured' ? 'cursor workflow-node--dash' : ''
+                }`}
+                onClick={this.props.branch === 'Not Configured' ? this.props.handleGoToWorkFlowEditor : null}
+            >
                 <div className={`workflow-node__git-icon`} />
                 <div className="workflow-node__title workflow-node__title--static">
                     <span>/{this.props.title}</span>
