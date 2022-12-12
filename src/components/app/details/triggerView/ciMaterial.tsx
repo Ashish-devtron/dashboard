@@ -1,39 +1,34 @@
 import React, { Component } from 'react'
-import { CIMaterialProps, CIMaterialState } from './types'
+import { CIMaterialProps, CIMaterialState, RegexValueType } from './types'
 import { ReactComponent as Play } from '../../../../assets/icons/misc/arrow-solid-right.svg'
 import { ReactComponent as Info } from '../../../../assets/icons/info-filled.svg'
 import { ReactComponent as Storage } from '../../../../assets/icons/ic-storage.svg'
 import { ReactComponent as OpenInNew } from '../../../../assets/icons/ic-open-in-new.svg'
-import { VisibleModal, ButtonWithLoader, Checkbox, showError, Progressing } from '../../../common'
-import { TriggerViewContext } from './TriggerView'
+import { VisibleModal, ButtonWithLoader, Checkbox, showError, Progressing, sortCallback } from '../../../common'
 import GitInfoMaterial from '../../../common/GitInfoMaterial'
 import { savePipeline } from '../../../ciPipeline/ciPipeline.service'
 import { DOCUMENTATION, ModuleNameMap, SourceTypeMap } from '../../../../config'
 import { ServerErrors } from '../../../../modals/commonTypes'
 import BranchRegexModal from './BranchRegexModal'
 import { getModuleConfigured } from '../appDetails/appDetails.service'
+import { TriggerViewContext } from './config'
 
 export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
+    static contextType: React.Context<any> = TriggerViewContext
+
     constructor(props) {
         super(props)
-        let regexValue: Record<
-            number,
-            {
-                value: string
-                isInvalid: boolean
+        const regexValue: Record<number, RegexValueType> = {}
+        this.props.material.forEach((mat) => {
+            regexValue[mat.gitMaterialId] = {
+                value: mat.value,
+                isInvalid: mat.regex && !new RegExp(mat.regex).test(mat.value),
             }
-        > = {}
-        this.props.material.forEach(
-            (mat, index) =>
-                (regexValue[mat.gitMaterialId] = {
-                    value: mat.value,
-                    isInvalid: mat.regex && !new RegExp(mat.regex).test(mat.value),
-                }),
-        )
+        })
         this.state = {
             regexValue: regexValue,
             selectedCIPipeline: props.filteredCIPipelines?.find((_ciPipeline) => _ciPipeline?.id == props.pipelineId),
-            isBlobStorageConfigured: false
+            isBlobStorageConfigured: false,
         }
     }
 
@@ -54,9 +49,7 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
         e.stopPropagation()
     }
 
-    onClickTrigger = (): void => {}
-
-    renderIgnoreCache = (context) => {
+    renderIgnoreCache = () => {
         if (this.props.isFirstTrigger) {
             return (
                 <div className="flexbox">
@@ -102,11 +95,11 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
         } else {
             return (
                 <Checkbox
-                    isChecked={context.invalidateCache}
+                    isChecked={this.context.invalidateCache}
                     onClick={this.onClickStopPropagation}
                     rootClassName="form__checkbox-label--ignore-cache mb-0"
                     value={'CHECKED'}
-                    onChange={context.toggleInvalidateCache}
+                    onChange={this.context.toggleInvalidateCache}
                 >
                     <div className="mr-5">
                         <div className="fs-13 fw-6">Ignore Cache</div>
@@ -117,10 +110,10 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
         }
     }
 
-    renderMaterialStartBuild = (context, canTrigger) => {
+    renderMaterialStartBuild = (canTrigger) => {
         return (
             <div className="trigger-modal__trigger">
-                {this.renderIgnoreCache(context)}
+                {this.renderIgnoreCache()}
                 <ButtonWithLoader
                     rootClassName="cta-with-img cta-with-img--ci-trigger-btn"
                     loaderColor="#ffffff"
@@ -128,7 +121,7 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
                     isLoading={this.props.isLoading}
                     onClick={(e) => {
                         e.stopPropagation()
-                        context.onClickTriggerCINode()
+                        this.context.onClickTriggerCINode()
                     }}
                 >
                     <Play className="trigger-btn__icon" />
@@ -138,8 +131,8 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
         )
     }
 
-    renderCIModal(context) {
-        let selectedMaterial = this.props.material.find((mat) => mat.isSelected)
+    renderCIModal() {
+        const selectedMaterial = this.props.material.find((mat) => mat.isSelected)
         let isMaterialActive = false
         for (let i = 0; i < this.props.material.length; i++) {
             if (this.props.material[i].active) {
@@ -147,7 +140,7 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
                 break
             }
         }
-        let canTrigger = this.props.material.reduce((isValid, mat) => {
+        const canTrigger = this.props.material.reduce((isValid, mat) => {
             isValid =
                 (isValid && !mat.isMaterialLoading && !!mat.history.find((history) => history.isSelected)) ||
                 (mat.branchErrorMsg === 'Source not configured' && isMaterialActive)
@@ -157,7 +150,6 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
             return (
                 <>
                     <GitInfoMaterial
-                        context={context}
                         material={this.props.material}
                         title={this.props.title}
                         pipelineId={this.props.pipelineId}
@@ -172,7 +164,7 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
                         onClickShowBranchRegexModal={this.props.onClickShowBranchRegexModal}
                         appId={this.props.match.params.appId}
                     />
-                    {this.props.showWebhookModal ? null : this.renderMaterialStartBuild(context, canTrigger)}
+                    {this.props.showWebhookModal ? null : this.renderMaterialStartBuild(canTrigger)}
                 </>
             )
         }
@@ -192,7 +184,7 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
         }
     }
 
-    onClickNextButton = (context) => {
+    onClickNextButton = () => {
         const payload: any = {
             appId: +this.props.match.params.appId,
             id: +this.props.workflowId,
@@ -201,7 +193,7 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
 
         // Populate the ciPipelineMaterial with flatten object
         if (this.state.selectedCIPipeline?.ciMaterial?.length) {
-            for (let _cm of this.state.selectedCIPipeline.ciMaterial) {
+            for (const _cm of this.state.selectedCIPipeline.ciMaterial) {
                 const regVal = this.state.regexValue[_cm.gitMaterialId]
                 let _updatedCM
                 if (regVal?.value && _cm.source.regex) {
@@ -232,7 +224,7 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
             .then((response) => {
                 if (response) {
                     this.props.getWorkflows()
-                    context.onClickCIMaterial(this.props.pipelineId, this.props.pipelineName)
+                    this.context.onClickCIMaterial(this.props.pipelineId, this.props.pipelineName)
                 }
             })
             .catch((error: ServerErrors) => {
@@ -241,19 +233,17 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
     }
 
     handleRegexInputValue = (id, value, mat) => {
-        const isValid = new RegExp(mat.regex).test(value)
         this.setState((prevState) => {
-            let rt = {
+            return {
                 regexValue: {
                     ...prevState.regexValue,
-                    [id]: { value, isInvalid: mat.regex && !isValid },
+                    [id]: { value, isInvalid: mat.regex && !new RegExp(mat.regex).test(value) },
                 },
             }
-            return rt
         })
     }
 
-    renderCIMaterialModal = (context) => {
+    renderCIMaterialModal = () => {
         return (
             <div className="modal-body--ci-material h-100" onClick={this.onClickStopPropagation}>
                 {this.props.loader ? (
@@ -269,7 +259,6 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
                                 showWebhookModal={this.props.showWebhookModal}
                                 title={this.props.title}
                                 isChangeBranchClicked={this.props.isChangeBranchClicked}
-                                context={context}
                                 onClickNextButton={this.onClickNextButton}
                                 onShowCIModal={this.props.onShowCIModal}
                                 handleRegexInputValue={this.handleRegexInputValue}
@@ -277,7 +266,7 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
                                 onCloseBranchRegexModal={this.props.onCloseBranchRegexModal}
                             />
                         )}
-                        {this.props.showCIModal && this.renderCIModal(context)}
+                        {this.props.showCIModal && this.renderCIModal()}
                     </>
                 )}
             </div>
@@ -286,15 +275,9 @@ export class CIMaterial extends Component<CIMaterialProps, CIMaterialState> {
 
     render() {
         return (
-            <TriggerViewContext.Consumer>
-                {(context) => {
-                    return (
-                        <VisibleModal className="" close={context.closeCIModal}>
-                            {this.renderCIMaterialModal(context)}
-                        </VisibleModal>
-                    )
-                }}
-            </TriggerViewContext.Consumer>
+            <VisibleModal className="" close={this.context.closeCIModal}>
+                {this.renderCIMaterialModal()}
+            </VisibleModal>
         )
     }
 }

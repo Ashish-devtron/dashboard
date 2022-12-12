@@ -23,13 +23,12 @@ interface EmptyStateCIMaterialProps {
     noSearchResultsMsg?: string
     toggleWebHookModal?: () => void
     clearSearch?: () => void
-    appId?: string|number
+    appId?: string | number
     handleGoToWorkFlowEditor?: (...args) => void
 }
 
 export class EmptyStateCIMaterial extends Component<EmptyStateCIMaterialProps> {
-
-  getData(): { img; title; subtitle; cta } {
+    getData(): { img; title; subtitle; cta } {
         if (this.props.isRepoError) {
             return {
                 img: <img src={ErrorImage} alt="no commits found" className="empty-state__img--ci-material" />,
@@ -52,13 +51,15 @@ export class EmptyStateCIMaterial extends Component<EmptyStateCIMaterialProps> {
                         {this.props.repoUrl}
                     </a>
                 ) : (
-                    <h1 className="dc__empty-title fs-13" style={{color: 'gray'}}>{notConfiguredError}</h1>
+                    <h1 className="dc__empty-title fs-13" style={{ color: 'gray' }}>
+                        {notConfiguredError}
+                    </h1>
                 ),
                 cta: this.props.repoUrl ? null : (
-                        <button type="button" className="cta flex" onClick={this.props.handleGoToWorkFlowEditor}>
-                            Configure Source
-                            <ForwardArrow className="ml-5" />
-                        </button>
+                    <button type="button" className="cta flex" onClick={this.props.handleGoToWorkFlowEditor}>
+                        Configure Source
+                        <ForwardArrow className="ml-5" />
+                    </button>
                 ),
             }
         } else if (this.props.noSearchResults) {
@@ -98,11 +99,11 @@ export class EmptyStateCIMaterial extends Component<EmptyStateCIMaterialProps> {
     }
 
     render() {
-        let { title, subtitle, img, cta } = this.getData()
+        const { title, subtitle, img, cta } = this.getData()
         if (this.props.isMaterialLoading) {
             return (
                 <EmptyState>
-                    <EmptyState.Loading text={'Fetching repository. This might take few minutes'} />
+                    <EmptyState.Loading text="Fetching... This might take few minutes" />
                 </EmptyState>
             )
         } else {
