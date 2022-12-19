@@ -115,9 +115,5 @@
         "hooks": {
             "pre-commit": "yarn eslint"
         }
-    },
-    "resolutions": {
-        "**/@typescript-eslint/eslint-plugin": "^5.15.0",
-        "**/@typescript-eslint/parser": "^5.15.0"
     }
 }

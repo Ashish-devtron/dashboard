@@ -1,0 +1,20 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "app"
+  ],
+  "devDependencies": {
+    "lerna": "^6.1.0"
+  },
+  "scripts": {
+    "start": "lerna run start --stream",
+    "test": "lerna run test --stream",
+    "publish-all": "lerna publish"
+  },
+  "resolutions": {
+      "**/@typescript-eslint/eslint-plugin": "^5.15.0",
+      "**/@typescript-eslint/parser": "^5.15.0"
+  }
+}

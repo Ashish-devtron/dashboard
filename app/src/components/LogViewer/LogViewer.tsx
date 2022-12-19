@@ -5,7 +5,7 @@ import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit';
 import * as XtermWebfont from 'xterm-webfont';
 import { SearchAddon } from 'xterm-addon-search';
-import '../../../node_modules/xterm/css/xterm.css';
+import '../../../../node_modules/xterm/css/xterm.css';
 import { Subject } from '../../util/Subject';
 import './LogViewer.scss'
 

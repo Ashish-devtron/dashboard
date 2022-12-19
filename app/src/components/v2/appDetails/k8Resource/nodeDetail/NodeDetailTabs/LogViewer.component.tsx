@@ -5,7 +5,7 @@ import CopyToast, { handleSelectionChange } from './CopyToast';
 import * as XtermWebfont from 'xterm-webfont';
 import { SearchAddon } from 'xterm-addon-search';
 import { AutoSizer } from 'react-virtualized';
-import '../../../../../../../node_modules/xterm/css/xterm.css';
+import '../../../../../../../../node_modules/xterm/css/xterm.css';
 import './nodeDetailTab.scss';
 import { Subject } from '../../../../../../util/Subject';
 import { Scroller } from '../../../../../app/details/cIDetails/CIDetails';
