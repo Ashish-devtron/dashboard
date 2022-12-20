@@ -25,10 +25,11 @@ import { convertToOptionsList, showError } from '../common'
 import { ServerErrors } from '../../modals/commonTypes'
 import ClusterManifest from './ClusterManifest'
 import ClusterEvents from './ClusterEvents'
+import TippyWhite from '../common/TippyWhite'
 import { ReactComponent as Help } from '../../assets/icons/ic-help.svg'
 import { ReactComponent as HelpIcon } from '../../assets/icons/ic-help-outline.svg'
-import { clusterImages, clusterSelectStyle, CLUSTER_STATUS } from './constants'
 import { ClusterTerminalType } from './types'
+import { clusterImages, clusterSelectStyle, CLUSTER_STATUS } from './constants'
 
 export default function ClusterTerminal({
     clusterId,
