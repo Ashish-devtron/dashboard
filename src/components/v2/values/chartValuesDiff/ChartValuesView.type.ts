@@ -3,6 +3,8 @@ import { InstalledAppInfo, ReleaseInfo } from '../../../external-apps/ExternalAp
 import { AppDetails } from '../../appDetails/appDetails.type'
 import { ChartDeploymentDetail } from '../../chartDeploymentHistory/chartDeploymentHistory.service'
 import YAML from 'yaml'
+import {Teams} from "../../../../services/service.types";
+import {AppMetaInfo, LabelTagsType} from "../../../app/types";
 
 export enum ChartKind {
     DEFAULT = 'DEFAULT',
@@ -87,6 +89,8 @@ export interface ChartProjectSelectorType {
     selectedProject: ChartValuesOptionType
     handleProjectSelection: (selected: ChartValuesOptionType) => void
     projects: ChartValuesOptionType[]
+    releaseInfo?: ReleaseInfo
+    installedConfig?: ChartInstalledConfig
     invalidProject: boolean
 }
 
@@ -414,4 +418,14 @@ export interface UpdateApplicationButtonProps {
 
 export interface ErrorScreenWithInfoProps {
     info: string
+}
+
+export interface ProjectSelectorTypes {
+    appId: string
+    appName: string
+    onClose: () => void
+    appMetaInfo: AppMetaInfo
+    installedAppId: number
+    projectsList: ChartValuesOptionType[]
+    getAppMetaInfoRes: () => Promise<AppMetaInfo>
 }

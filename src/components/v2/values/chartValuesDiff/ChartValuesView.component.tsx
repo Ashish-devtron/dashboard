@@ -5,6 +5,9 @@ import { DropdownIndicator, getCommonSelectStyle, Option } from '../../common/Re
 import { ReactComponent as Error } from '../../../../assets/icons/ic-warning.svg'
 import { ReactComponent as ErrorExclamation } from '../../../../assets/icons/ic-error-exclamation.svg'
 import { ReactComponent as LinkIcon } from '../../../../assets/icons/ic-link.svg'
+import { ReactComponent as Refetch } from '../../../../assets/icons/ic-restore.svg'
+import { ReactComponent as Info } from '../../../../assets/icons/ic-info-filled-prple.svg'
+import {ReactComponent as EditIcon, ReactComponent as Edit} from '../../../../assets/icons/ic-pencil.svg'
 import { ChartValuesSelect } from '../../../charts/util/ChartValueSelect'
 import { DeleteDialog, Progressing, Select } from '../../../common'
 import {
@@ -39,6 +42,7 @@ import { REQUIRED_FIELD_MSG } from '../../../../config/constantMessaging'
 import { RadioGroup, RadioGroupItem } from '../../../common/formFields/RadioGroup'
 import { ReactComponent as ArgoCD } from '../../../../assets/icons/argo-cd-app.svg'
 import { ReactComponent as Helm } from '../../../../assets/icons/helm-app.svg'
+import ProjectModal from "./ProjectSelector";
 
 export const ChartEnvironmentSelector = ({
     isExternal,
@@ -139,13 +143,11 @@ export const ChartProjectSelector = ({
     handleProjectSelection,
     projects,
     invalidProject,
+    installedConfig,
+    releaseInfo
 }: ChartProjectSelectorType): JSX.Element => {
-    return !isDeployChartView ? (
-        <div className="chart-values__project-container mb-12">
-            <h2 className="chart-values__project-label fs-13 fw-4 lh-20 cn-7">Project</h2>
-            <span className="chart-values__project-name fs-13 fw-6 lh-20 cn-9">{selectedProject.label}</span>
-        </div>
-    ) : (
+    return  (
+
         <label className="form__row form__row--w-100 fw-4">
             <span className="form__label required-field">Project</span>
             <ReactSelect
@@ -162,7 +164,8 @@ export const ChartProjectSelector = ({
             />
             {invalidProject && renderValidationErrorLabel()}
         </label>
-    )
+        )
+
 }
 
 export const ChartVersionSelector = ({
