@@ -1,39 +1,39 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import CodeEditor from '../CodeEditor/CodeEditor'
 import MessageUI, { MsgUIType } from '../v2/common/message.ui'
-import { getclusterManifest } from './clusterNodes.service'
+import { getClusterManifest } from './clusterNodes.service'
 import YAML from 'yaml'
-import { MODES } from '../../config'
+import { MESSAGING_UI, MODES } from '../../config'
 
-export default function ClusterManifest({ clusterId }) {
+export default function ClusterManifest({ terminalAccessId }: { terminalAccessId: number }) {
     const [manifestValue, setManifest] = useState('')
-    const [loading, setLoading] = useState<boolean>()
-    const [isResourceMissing, setIsResourceMissing] = useState(false)
+    const [loading, setLoading] = useState<boolean>(true)
+    const [isResourceMissing, setResourceMissing] = useState(false)
 
     useEffect(() => {
-        setLoading(true)
-        if (clusterId) {
-            getclusterManifest(clusterId)
+        if (terminalAccessId) {
+            getClusterManifest(terminalAccessId)
                 .then((response) => {
                     setLoading(false)
                     const _manifest = YAML.stringify(response.result?.manifest)
                     setManifest(_manifest)
                 })
                 .catch((error) => {
-                    setIsResourceMissing(true)
+                    setResourceMissing(true)
+                }).finally(() => {
                     setLoading(false)
                 })
         } else {
-            setIsResourceMissing(true)
+            setResourceMissing(true)
             setLoading(false)
         }
-    }, [clusterId])
+    }, [terminalAccessId])
 
     const renderManifest = () => {
         if (isResourceMissing) {
-            return <MessageUI msg="Manifest not available" size={24} />
+            return <MessageUI msg={MESSAGING_UI.MANIFEST_NOT_AVAILABLE} size={24} />
         } else if (loading) {
-            return <MessageUI msg={'Fetching manifest'} icon={MsgUIType.LOADING} size={24} />
+            return <MessageUI msg={MESSAGING_UI.FETCHING_MANIFEST} icon={MsgUIType.LOADING} size={24} />
         } else {
             return (
                 manifestValue && (

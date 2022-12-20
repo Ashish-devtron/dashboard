@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react'
+import { MESSAGING_UI } from '../../config'
 import { showError } from '../common'
-import { EventsTable } from '../v2/appDetails/k8Resource/nodeDetail/NodeDetailTabs/Events.table'
+import { EventsTable } from '../v2/appDetails/k8Resource/nodeDetail/NodeDetailTabs/EventsTable'
 import MessageUI from '../v2/common/message.ui'
-import { getclusterEvents } from './clusterNodes.service'
+import { getClusterEvents } from './clusterNodes.service'
 
-export default function ClusterEvents({ clusterId }) {
+export default function ClusterEvents({ terminalAccessId }: { terminalAccessId: number }) {
     const [events, setEvents] = useState([])
-    const [loading, setLoading] = useState<boolean>()
-    const [isResourceMissing, setIsResourceMissing] = useState(false)
+    const [loading, setLoading] = useState<boolean>(true)
+    const [isResourceMissing, setResourceMissing] = useState(false)
 
     useEffect(() => {
-        if (clusterId) {
-            setLoading(true)
-            getclusterEvents(clusterId)
+        if (terminalAccessId) {
+            getClusterEvents(terminalAccessId)
                 .then((response) => {
                     setLoading(false)
                     const events = response.result?.events.items
@@ -20,16 +20,17 @@ export default function ClusterEvents({ clusterId }) {
                 })
                 .catch((error) => {
                     showError(error)
+                }).finally(() => {
                     setLoading(false)
                 })
         } else {
-            setIsResourceMissing(true)
+            setResourceMissing(true)
             setLoading(false)
         }
     }, [])
 
     return isResourceMissing ? (
-        <MessageUI msg="Manifest not available" size={24} />
+        <MessageUI msg={MESSAGING_UI.NO_EVENTS} size={24} />
     ) : (
         <EventsTable loading={loading} eventsList={events} />
     )

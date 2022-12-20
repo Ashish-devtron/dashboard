@@ -15,6 +15,7 @@ import ClusterNodeEmptyState from './ClusterNodeEmptyStates'
 import Tippy from '@tippyjs/react'
 import './clusterNodes.scss'
 import ClusterTerminal from './ClusterTerminal'
+import { OptionType } from '../app/types'
 
 export default function ClusterList({ imageList, isSuperAdmin, namespaceList }: ClusterListType) {
     const match = useRouteMatch()
@@ -227,7 +228,7 @@ export default function ClusterList({ imageList, isSuperAdmin, namespaceList }: 
                     nodeList={terminalclusterData.nodeNames}
                     closeTerminal={closeTerminal}
                     clusterImageList={imageList}
-                    namespaceList={namespaceList}
+                    namespaceList={namespaceList[terminalclusterData.name]}
                 />
             )}
         </div>

@@ -1,5 +1,5 @@
 import moment from 'moment'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import CopyToast, { handleSelectionChange } from '../CopyToast'
@@ -13,11 +13,14 @@ import IndexStore from '../../../../index.store'
 import { AppType } from '../../../../appDetails.type'
 import { elementDidMount, useOnline, showError } from '../../../../../../common'
 import { ServerErrors } from '../../../../../../../modals/commonTypes'
+import { SERVER_MODE } from '../../../../../../../config'
+import { mainContext } from '../../../../../../common/navigation/NavigationRoutes'
+import { CLUSTER_STATUS } from '../../../../../../ClusterNodes/constants'
 
 let socket = undefined
 let terminal = undefined
 let fitAddon = undefined
-let clustertimeOut = undefined
+let clusterTimeOut = undefined
 
 function TerminalView(terminalViewProps: TerminalViewProps) {
     const [ga_session_duration, setGA_session_duration] = useState<moment.Moment>()
@@ -27,6 +30,7 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
     const isOnline = useOnline()
     const [errorMessage, setErrorMessage] = useState<string>('')
     const socketConnectionRef = useRef<SocketConnectionType>(terminalViewProps.socketConnection)
+    const { serverMode } = useContext(mainContext)
 
     useEffect(() => {
         if (!popupText) return
@@ -34,7 +38,7 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
     }, [popupText])
 
     useEffect(() => {
-        if (terminal && fitAddon && terminalViewProps.isterminalTab) {
+        if (terminal && fitAddon && terminalViewProps.isTerminalTab) {
             fitAddon.fit()
         }
     }, [terminalViewProps.isFullScreen])
@@ -81,7 +85,10 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
 
     const postInitialize = (sessionId: string) => {
         let socketURL = process.env.REACT_APP_ORCHESTRATOR_ROOT
-        if (appDetails.appType === AppType.EXTERNAL_HELM_CHART) {
+        if (
+            appDetails.appType === AppType.EXTERNAL_HELM_CHART ||
+            (terminalViewProps.isClusterTerminal && serverMode === SERVER_MODE.EA_ONLY)
+        ) {
             socketURL += '/k8s/pod/exec/sockjs/ws/'
         } else {
             socketURL += '/api/vi/pod/exec/ws/'
@@ -115,8 +122,8 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
         })
 
         _socket.onopen = function () {
-            if (terminalViewProps.clusterTerminal) {
-                preFetchData('Running', true)
+            if (terminalViewProps.isClusterTerminal) {
+                preFetchData(CLUSTER_STATUS.RUNNING, true)
             }
             const startData = { Op: 'bind', SessionID: sessionId }
             _socket.send(JSON.stringify(startData))
@@ -146,7 +153,7 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
 
         _socket.onclose = function (evt) {
             disableInput()
-            if (terminalViewProps.clusterTerminal) {
+            if (terminalViewProps.isClusterTerminal) {
                 _terminal.writeln('')
                 _terminal.writeln('---------------------------------------------')
                 _terminal.writeln(`Disconnected at ${moment().format('DD-MMM-YYYY')} at ${moment().format('hh:mm A')}`)
@@ -166,23 +173,29 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
 
         terminal?.reset()
 
-        setTimeout(() => {
+        if (terminalViewProps.isClusterTerminal) {
             terminalViewProps.setSocketConnection(SocketConnectionType.CONNECTING)
-        }, 100)
+        } else {
+            setTimeout(() => {
+                terminalViewProps.setSocketConnection(SocketConnectionType.CONNECTING)
+            }, 100)
+        }
     }
 
     const preFetchData = (status = '', firstMessageReceived = false) => {
         const _terminal = terminal
+
+        if(!_terminal) return
+        
         _terminal?.reset()
-        // const _fitAddon = fitAddon
 
         _terminal.write('Creating pod.')
-        if (status === 'Running') {
+        if (status === CLUSTER_STATUS.RUNNING) {
             _terminal.write(' \u001b[38;5;35mSucceeded\u001b[0m')
             _terminal.writeln('')
             _terminal.write('Connecting to pod terminal.')
-        } else if (status === 'Failed') {
-            _terminal.write('Failed')
+        } else if (status === CLUSTER_STATUS.FAILED) {
+            _terminal.write(' \u001b[38;5;196mFailed\u001b[0m')
             _terminal.write(' | \u001b[38;5;110m\u001b[4mCheck Pod Events\u001b[0m')
             _terminal.write(' | ')
             _terminal.write('\u001b[38;5;110m\u001b[4mCheck Pod Manifest\u001b[0m')
@@ -206,8 +219,8 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
         socketConnectionRef.current = terminalViewProps.socketConnection
 
         if (terminalViewProps.socketConnection === SocketConnectionType.DISCONNECTING) {
-            if (clustertimeOut) {
-                clearTimeout(clustertimeOut)
+            if (clusterTimeOut) {
+                clearTimeout(clusterTimeOut)
             }
             if (socket) {
                 socket.close()
@@ -226,11 +239,7 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
             label: `${terminalViewProps.nodeName}/${terminalViewProps.containerName}/${terminalViewProps.shell.value}`,
         })
 
-        if (!terminalViewProps.clusterTerminal) {
-            reconnect()
-        } else {
-            terminal?.reset()
-        }
+        reconnect()
     }, [terminalViewProps.nodeName])
 
     useEffect(() => {
@@ -240,11 +249,7 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
             label: `${terminalViewProps.nodeName}/${terminalViewProps.containerName}/${terminalViewProps.shell.value}`,
         })
 
-        if (!terminalViewProps.clusterTerminal) {
-            reconnect()
-        } else {
-            terminal?.reset()
-        }
+        reconnect()
     }, [terminalViewProps.containerName])
 
     useEffect(() => {
@@ -254,29 +259,25 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
             label: `${terminalViewProps.nodeName}/${terminalViewProps.containerName}/${terminalViewProps.shell.value}`,
         })
 
-        if (!terminalViewProps.clusterTerminal) {
-            reconnect()
-        } else {
-            terminal?.reset()
-        }
+        reconnect()
     }, [terminalViewProps.shell])
 
     useEffect(() => {
         terminal?.reset()
-    }, [terminalViewProps.toggleOption])
+    }, [terminalViewProps.isToggleOption])
 
     useEffect(() => {
-        if (terminalViewProps.terminalCleared) {
+        if (terminalViewProps.isTerminalCleared) {
             terminal?.clear()
             terminal?.focus()
             terminalViewProps.setTerminalCleared(false)
         }
-    }, [terminalViewProps.terminalCleared])
+    }, [terminalViewProps.isTerminalCleared])
 
     useEffect(() => {
         if (firstMessageReceived) {
-            if (terminalViewProps.clusterTerminal) {
-                if (terminalViewProps.isterminalTab) {
+            if (terminalViewProps.isClusterTerminal) {
+                if (terminalViewProps.isTerminalTab) {
                     fitAddon.fit()
                 }
             } else {
@@ -285,7 +286,7 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
             terminal.setOption('cursorBlink', true)
             terminalViewProps.setSocketConnection(SocketConnectionType.CONNECTED)
         }
-    }, [firstMessageReceived, terminalViewProps.isterminalTab])
+    }, [firstMessageReceived, terminalViewProps.isTerminalTab])
 
     useEffect(() => {
         if (!window.location.origin) {
@@ -314,7 +315,7 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
             socket = undefined
             terminal = undefined
             fitAddon = undefined
-            clearTimeout(clustertimeOut)
+            clearTimeout(clusterTimeOut)
 
             let duration = moment(ga_session_duration).fromNow()
 
@@ -327,20 +328,20 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
     }, [])
 
     useEffect(() => {
-        if (terminalViewProps.terminalCleared) {
+        if (terminalViewProps.isTerminalCleared) {
             terminal?.clear()
             terminal?.focus()
             terminalViewProps.setTerminalCleared(false)
         }
-    }, [terminalViewProps.terminalCleared])
+    }, [terminalViewProps.isTerminalCleared])
 
     const getClusterData = (url, count) => {
         if (
-            clustertimeOut &&
+            clusterTimeOut &&
             (socketConnectionRef.current === SocketConnectionType.DISCONNECTED ||
                 socketConnectionRef.current === SocketConnectionType.DISCONNECTING)
         ) {
-            clearTimeout(clustertimeOut)
+            clearTimeout(clusterTimeOut)
             return
         }
         if (!terminal) {
@@ -353,32 +354,32 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
             .then((response: any) => {
                 let sessionId = response.result.userTerminalSessionId
                 let status = response.result.status
-                preFetchData(status)
                 if (!sessionId && count) {
-                    clustertimeOut = setTimeout(() => {
+                    preFetchData(status)
+                    clusterTimeOut = setTimeout(() => {
                         getClusterData(url, count - 1)
                     }, 3000)
                 } else if (sessionId) {
-                    postInitialize(sessionId)
+                    if (socketConnectionRef.current === SocketConnectionType.CONNECTING) {
+                        postInitialize(sessionId)
+                        preFetchData(status)
+                    }
                 } else {
-                    preFetchData('Failed', false)
+                    preFetchData(CLUSTER_STATUS.FAILED, false)
                 }
             })
             .catch((err) => {
-                showError(err)
-                if (err instanceof ServerErrors && Array.isArray(err.errors)) {
-                    const _invalidNameErr = err.errors[0].userMessage
-                    if (_invalidNameErr.includes('Unauthorized')) {
-                        setErrorMessage(ERROR_MESSAGE.UNAUTHORIZED)
-                    }
-                }
+                clearTimeout(clusterTimeOut)
+                terminalViewProps.sessionError(err)
+                terminal?.reset()
             })
     }
 
     const getNewSession = () => {
-        if (terminalViewProps.clusterTerminal) {
+        if (terminalViewProps.isClusterTerminal) {
             if (!terminalViewProps.terminalId) return
-            getClusterData(`user/terminal/get?terminalAccessId=${terminalViewProps.terminalId}`, 8)
+            terminalViewProps.setSocketConnection(SocketConnectionType.CONNECTING)
+            getClusterData(`user/terminal/get?terminalAccessId=${terminalViewProps.terminalId}`, 5)
         } else {
             if (
                 !terminalViewProps.nodeName ||
@@ -427,7 +428,7 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
     }
 
     const clusterSocketConnecting: boolean =
-        terminalViewProps.clusterTerminal && terminalViewProps.socketConnection === SocketConnectionType.CONNECTING
+        terminalViewProps.isClusterTerminal && terminalViewProps.socketConnection === SocketConnectionType.CONNECTING
 
     const renderConnectionStrip = () => {
         if (!isOnline) {
@@ -436,7 +437,9 @@ function TerminalView(terminalViewProps: TerminalViewProps) {
                     You’re offline. Please check your internet connection.
                 </div>
             )
-        } else if (terminalViewProps.fetchRetry) {
+        } else if (terminalViewProps.isClusterTerminal && !terminalViewProps.isPodConnected) {
+            return
+        } else if (terminalViewProps.isFetchRetry) {
             return (
                 <div className="bcr-7 pl-20 cn-0">
                     Concurrent connection limit reached.&nbsp;

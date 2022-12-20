@@ -1512,7 +1512,7 @@ function ChartValuesView({
         )
     }
 
-    if (commonState.isLoading || appMetaInfo == null) {
+    if (commonState.isLoading || (appMetaInfo == null && !isDeployChartView)) {
         return (
             <div className="dc__loading-wrapper">
                 <Progressing pageLoader />

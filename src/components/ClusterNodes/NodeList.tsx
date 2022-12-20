@@ -14,7 +14,6 @@ import {
 import {
     ClusterCapacityType,
     ClusterListResponse,
-    COLUMN_METADATA,
     ColumnMetadataType,
     TEXT_COLOR_CLASS,
     ERROR_TYPE,
@@ -34,6 +33,7 @@ import Tippy from '@tippyjs/react'
 import './clusterNodes.scss'
 import { ReactComponent as TerminalIcon } from '../../assets/icons/ic-terminal-fill.svg'
 import ClusterTerminal from './ClusterTerminal'
+import { COLUMN_METADATA } from './constants'
 
 export default function NodeList({ imageList, isSuperAdmin, namespaceList }: ClusterListType) {
     const match = useRouteMatch()
@@ -67,8 +67,8 @@ export default function NodeList({ imageList, isSuperAdmin, namespaceList }: Clu
     const [fixedNodeNameColumn, setFixedNodeNameColumn] = useState(false)
     const [nodeListOffset, setNodeListOffset] = useState(0)
     const [showTerminal, setTerminal] = useState<boolean>(false)
-    const [terminalclusterData, setTerminalCluster] = useState<string>()
     const nodeList = filteredFlattenNodeList.map((node) => node['name'])
+    const [selectedNode, setSelectedNode] = useState<string>()
     const pageSize = 15
 
     useEffect(() => {
@@ -558,10 +558,9 @@ export default function NodeList({ imageList, isSuperAdmin, namespaceList }: Clu
         return (
             <div
                 key={nodeData['name']}
-                className={`fw-4 cn-9 fs-13 dc__border-bottom-n1 pr-20 hover-class h-44 flexbox  dc__visible-hover ${
+                className={`dc_width-max-content dc_min-w-100 fw-4 cn-9 fs-13 dc__border-bottom-n1 pr-20 hover-class h-44 flexbox  dc__visible-hover ${
                     isSuperAdmin ? 'dc__visible-hover--parent' : ''
                 }`}
-                style={{ width: 'max-content', minWidth: '100%' }}
             >
                 {appliedColumns.map((column) => {
                     return column.label === 'Node' ? (
@@ -633,7 +632,7 @@ export default function NodeList({ imageList, isSuperAdmin, namespaceList }: Clu
     }
 
     const openTerminal = (clusterData): void => {
-        setTerminalCluster(clusterData.name)
+        setSelectedNode(clusterData.name)
         setTerminal(true)
     }
 
@@ -644,7 +643,10 @@ export default function NodeList({ imageList, isSuperAdmin, namespaceList }: Clu
     return (
         <div>
             <PageHeader breadCrumbs={renderBreadcrumbs} isBreadcrumbs={true} />
-            <div className="node-list dc__overflow-scroll" style={{ height: `calc(${showTerminal ? '50vh' : '100vh'} - 61px)` }}>
+            <div
+                className="node-list dc__overflow-scroll"
+                style={{ height: `calc(${showTerminal ? '50vh' : '100vh'} - 61px)` }}
+            >
                 {renderClusterSummary()}
                 <div
                     className={`bcn-0 pt-16 list-min-height ${noResults ? 'no-result-container' : ''} ${
@@ -687,15 +689,17 @@ export default function NodeList({ imageList, isSuperAdmin, namespaceList }: Clu
                     )}
                 </div>
             </div>
-            {showTerminal && terminalclusterData &&
-                                <ClusterTerminal
-                                    clusterId={Number(clusterId)}
-                                    nodeList={nodeList}
-                                    closeTerminal={closeTerminal}
-                                    clusterImageList={imageList}
-                                    namespaceList={namespaceList}
-                                />
-                            }
+            {showTerminal && selectedNode && (
+                <ClusterTerminal
+                    clusterId={Number(clusterId)}
+                    nodeList={nodeList}
+                    closeTerminal={closeTerminal}
+                    clusterImageList={imageList}
+                    namespaceList={namespaceList[selectedCluster.label]}
+                    node={selectedNode}
+                    setSelectedNode={setSelectedNode}
+                />
+            )}
         </div>
     )
 }

@@ -3,17 +3,24 @@ export interface TerminalViewProps {
     shell: any
     containerName: string
     socketConnection: SocketConnectionType
-    terminalCleared: boolean
+    isTerminalCleared: boolean
     setTerminalCleared: (terminalCleared: boolean) => void
     setSocketConnection: (socketConnection: SocketConnectionType) => void
-    clusterTerminal?: boolean
+    isClusterTerminal?: boolean
     terminalId?: string
-    fetchRetry?: boolean
+    isFetchRetry?: boolean
     disconnectRetry?: () => void
-    toggleOption?: boolean
+    isToggleOption?: boolean
     isFullScreen?: boolean
-    isterminalTab?: boolean
+    isTerminalTab?: boolean
     setTerminalTab?: (selectedTabIndex: number) => void
+    isPodConnected?: boolean
+    sessionError?: (error: any) => void
+}
+
+export interface EventTableType {
+    loading: boolean
+    eventsList: any[]
 }
 
 export enum SocketConnectionType {
@@ -28,6 +35,6 @@ export const ERROR_MESSAGE = {
 }
 
 export const POD_LINKS = {
-    POD_MANIFEST : 'Check Pod Manifest',
-    POD_EVENTS : 'Check Pod Events'
+    POD_MANIFEST: 'Check Pod Manifest',
+    POD_EVENTS: 'Check Pod Events',
 }

@@ -45,15 +45,17 @@ import './clusterNodes.scss'
 import { ServerErrors } from '../../modals/commonTypes'
 import { ReactComponent as TerminalIcon } from '../../assets/icons/ic-terminal-fill.svg'
 import ClusterTerminal from './ClusterTerminal'
+import { OptionType } from '../app/types'
 
 export default function NodeDetails({ imageList, isSuperAdmin, namespaceList }: ClusterListType) {
+    const { clusterId, nodeName } = useParams<{ clusterId: string; nodeName: string }>()
+    const nodeListRef = useRef([nodeName])
     const [loader, setLoader] = useState(false)
     const [apiInProgress, setApiInProgress] = useState(false)
     const [isReviewState, setIsReviewStates] = useState(false)
     const [selectedTabIndex, setSelectedTabIndex] = useState(0)
     const [selectedSubTabIndex, setSelectedSubTabIndex] = useState(0)
     const [nodeDetail, setNodeDetail] = useState<NodeDetail>(null)
-    const { clusterId, nodeName } = useParams<{ clusterId: string; nodeName: string }>()
     const [copied, setCopied] = useState(false)
     const [modifiedManifest, setModifiedManifest] = useState('')
     const [cpuData, setCpuData] = useState<ResourceDetail>(null)
@@ -890,10 +892,10 @@ export default function NodeDetails({ imageList, isSuperAdmin, namespaceList }: 
         return (
             <ClusterTerminal
                 clusterId={Number(clusterId)}
-                nodeList={[nodeName]}
+                nodeList={nodeListRef.current}
                 clusterImageList={imageList}
                 isNodeDetailsPage={true}
-                namespaceList={namespaceList}
+                namespaceList={namespaceList[nodeDetail.clusterName]}
             />
         )
     }
