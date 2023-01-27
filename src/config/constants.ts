@@ -731,7 +731,7 @@ export const DEPLOYMENT_STATUS = {
 }
 
 export const DEPLOYMENT_STATUS_QUERY_PARAM = 'deployment-status'
-
+export const LAST_SEEN = 'last seen'
 export const GIT_BRANCH_NOT_CONFIGURED = 'Not Configured'
 export const SOURCE_NOT_CONFIGURED = 'Source not configured'
 export const DEFAULT_GIT_BRANCH_VALUE = '--'
